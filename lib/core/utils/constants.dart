@@ -1,7 +1,10 @@
 class ApiConstants {
-  static const String baseUrl = 'https://erp.comsindia.in/api';
-  static const String verifyMobile = '/verify-mobile';
-  static const String verifyOtp = '/verify-otp';
+  static const String baseUrl = 'https://erp.comsindia.in';
+  static const String verifyMobile = '/api/verify-mobile';
+  static const String verifyOtp = '/api/verify-otp';
+  static const String logout = '/api/logout';
+  static const String profile = '/api/profile';
+  static const String employeeDetails = '/api/employee/';
 }
 
 class AppColors {

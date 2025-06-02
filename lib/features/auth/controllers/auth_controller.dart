@@ -87,7 +87,21 @@ class AuthController extends GetxController {
         isLoading.value = false;
         return true;
       } else {
-        errorMessage.value = responseData['message'] ?? 'Failed to send OTP';
+        // Handle error message from API
+        if (responseData['message'] is Map) {
+          // If message is a map (validation errors)
+          final messageMap = responseData['message'] as Map;
+          if (messageMap.containsKey('mobile')) {
+            errorMessage.value =
+                messageMap['mobile'][0] ?? 'Invalid mobile number';
+          } else {
+            errorMessage.value = 'Invalid mobile number';
+          }
+        } else {
+          // If message is a string
+          errorMessage.value =
+              responseData['message']?.toString() ?? 'Failed to send OTP';
+        }
         isLoading.value = false;
         return false;
       }
@@ -153,7 +167,12 @@ class AuthController extends GetxController {
           currentUser.value = user;
 
           // Save to storage
-          await _storageService.saveAuthData(authToken, user);
+          await _storageService.saveAuthData(
+            authToken,
+            user,
+            tokenType: responseData['token_type'] ?? 'Bearer',
+            expiresIn: responseData['expires_in'] ?? 3600,
+          );
 
           isLoading.value = false;
 
