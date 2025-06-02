@@ -4,7 +4,6 @@ class ApiConstants {
   static const String verifyOtp = '/api/verify-otp';
   static const String logout = '/api/logout';
   static const String profile = '/api/profile';
-  static const String employeeDetails = '/api/employee/';
 }
 
 class AppColors {

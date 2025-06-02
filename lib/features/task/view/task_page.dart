@@ -95,44 +95,35 @@ class _TaskListPageState extends State<TaskListPage> {
   void _filterTasks() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-
+    
     // First, filter out completed tasks
-    final incompleteTasks = _allTasks
-        .where((task) => !task.status.toLowerCase().contains('completed'))
-        .toList();
+    final incompleteTasks = _allTasks.where((task) => 
+      !task.status.toLowerCase().contains('completed')).toList();
 
     if (_selectedFilter == 'today') {
       // Show only today's tasks
       _filteredTasks = incompleteTasks.where((task) {
         try {
           final taskDate = DateTime.parse(task.fromDate);
-          final taskDateOnly =
-              DateTime(taskDate.year, taskDate.month, taskDate.day);
+          final taskDateOnly = DateTime(taskDate.year, taskDate.month, taskDate.day);
           return taskDateOnly.isAtSameMomentAs(today);
         } catch (e) {
-          print('Error parsing date: ${task.fromDate}');
           return false;
         }
       }).toList();
-
-      print('Today\'s tasks count: ${_filteredTasks.length}');
-      print(
-          'Today\'s tasks: ${_filteredTasks.map((t) => t.taskName).toList()}');
     } else {
-      // Show upcoming tasks (from tomorrow onwards)
+      // Show upcoming 3 tasks (from tomorrow onwards)
       final upcomingTasks = incompleteTasks.where((task) {
         try {
           final taskDate = DateTime.parse(task.fromDate);
-          final taskDateOnly =
-              DateTime(taskDate.year, taskDate.month, taskDate.day);
+          final taskDateOnly = DateTime(taskDate.year, taskDate.month, taskDate.day);
           return taskDateOnly.isAfter(today);
         } catch (e) {
-          print('Error parsing date: ${task.fromDate}');
           return false;
         }
       }).toList();
 
-      // Sort by date
+      // Sort by date and take only first 3
       upcomingTasks.sort((a, b) {
         try {
           final dateA = DateTime.parse(a.fromDate);
@@ -144,22 +135,14 @@ class _TaskListPageState extends State<TaskListPage> {
       });
 
       _filteredTasks = upcomingTasks.take(3).toList();
-      print('Upcoming tasks count: ${_filteredTasks.length}');
-      print(
-          'Upcoming tasks: ${_filteredTasks.map((t) => t.taskName).toList()}');
     }
 
     // Apply search filter if there's a search query
     if (_searchController.text.isNotEmpty) {
-      _filteredTasks = _filteredTasks
-          .where((task) =>
-              task.taskName
-                  .toLowerCase()
-                  .contains(_searchController.text.toLowerCase()) ||
-              task.taskDescription
-                  .toLowerCase()
-                  .contains(_searchController.text.toLowerCase()))
-          .toList();
+      _filteredTasks = _filteredTasks.where((task) =>
+          task.taskName.toLowerCase().contains(_searchController.text.toLowerCase()) ||
+          task.taskDescription.toLowerCase().contains(_searchController.text.toLowerCase())
+      ).toList();
     }
   }
 
@@ -434,13 +417,13 @@ class _TaskListPageState extends State<TaskListPage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       decoration: BoxDecoration(
-                        color: _selectedFilter == 'today'
-                            ? Colors.blue[50]
+                        color: _selectedFilter == 'today' 
+                            ? Colors.blue[50] 
                             : Colors.transparent,
                         border: Border(
                           bottom: BorderSide(
-                            color: _selectedFilter == 'today'
-                                ? Colors.blue
+                            color: _selectedFilter == 'today' 
+                                ? Colors.blue 
                                 : Colors.transparent,
                             width: 2,
                           ),
@@ -451,8 +434,8 @@ class _TaskListPageState extends State<TaskListPage> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: _selectedFilter == 'today'
-                              ? Colors.blue[700]
+                          color: _selectedFilter == 'today' 
+                              ? Colors.blue[700] 
                               : Colors.grey[600],
                         ),
                       ),
@@ -470,13 +453,13 @@ class _TaskListPageState extends State<TaskListPage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       decoration: BoxDecoration(
-                        color: _selectedFilter == 'upcoming'
-                            ? Colors.orange[50]
+                        color: _selectedFilter == 'upcoming' 
+                            ? Colors.orange[50] 
                             : Colors.transparent,
                         border: Border(
                           bottom: BorderSide(
-                            color: _selectedFilter == 'upcoming'
-                                ? Colors.orange
+                            color: _selectedFilter == 'upcoming' 
+                                ? Colors.orange 
                                 : Colors.transparent,
                             width: 2,
                           ),
@@ -487,8 +470,8 @@ class _TaskListPageState extends State<TaskListPage> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: _selectedFilter == 'upcoming'
-                              ? Colors.orange[700]
+                          color: _selectedFilter == 'upcoming' 
+                              ? Colors.orange[700] 
                               : Colors.grey[600],
                         ),
                       ),
@@ -591,15 +574,15 @@ class _TaskListPageState extends State<TaskListPage> {
             Icon(Icons.assignment_outlined, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              _selectedFilter == 'today'
-                  ? 'No tasks for today'
+              _selectedFilter == 'today' 
+                  ? 'No tasks for today' 
                   : 'No upcoming tasks',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Text(
-              _selectedFilter == 'today'
-                  ? 'You have no tasks scheduled for today'
+              _selectedFilter == 'today' 
+                  ? 'You have no tasks scheduled for today' 
                   : 'No tasks scheduled for the next few days',
               style: TextStyle(color: Colors.grey[600]),
             ),
@@ -622,7 +605,7 @@ class _TaskListPageState extends State<TaskListPage> {
 
   Widget _buildTaskCard(TaskDetailData task) {
     final isToday = _isTaskToday(task.fromDate);
-
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -789,8 +772,7 @@ class _TaskListPageState extends State<TaskListPage> {
       final taskDate = DateTime.parse(dateString);
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
-      final taskDateOnly =
-          DateTime(taskDate.year, taskDate.month, taskDate.day);
+      final taskDateOnly = DateTime(taskDate.year, taskDate.month, taskDate.day);
       return taskDateOnly.isAtSameMomentAs(today);
     } catch (e) {
       return false;

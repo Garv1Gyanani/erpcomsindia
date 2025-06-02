@@ -92,22 +92,17 @@ class AuthController extends GetxController {
           // If message is a map (validation errors)
           final messageMap = responseData['message'] as Map;
           if (messageMap.containsKey('mobile')) {
-            errorMessage.value =
-                messageMap['mobile'][0] ?? 'Invalid mobile number';
-          } else {
-            errorMessage.value = 'Invalid mobile number';
+            errorMessage.value = messageMap['mobile'][0];
           }
-        } else {
-          // If message is a string
-          errorMessage.value =
-              responseData['message']?.toString() ?? 'Failed to send OTP';
         }
         isLoading.value = false;
         return false;
       }
     } catch (e) {
       print('Error requesting OTP: $e');
-      errorMessage.value = 'Failed to send OTP. Please try again.';
+      if (e.toString().contains('The selected mobile is invalid')) {
+        errorMessage.value = 'The selected mobile is invalid';
+      }
       isLoading.value = false;
       return false;
     }

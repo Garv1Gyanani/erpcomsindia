@@ -74,18 +74,9 @@ class ApiService {
   Future<Response> verifyMobile(String mobile) async {
     try {
       final response = await _dio.get(
-        ApiConstants.verifyMobile,
-        queryParameters: {'mobile': mobile},
-        options: Options(
-          headers: {
-            'Authorization':
-                'Bearer eyJhbGciOiJIUzI1NiJ9.e30.ulmAWxLxCwNUPwLLzm1ylKEGFK6U2qfisp3b_kMYMrU'
-          },
-          validateStatus: (status) {
-            return status! < 500; // Accept all status codes less than 500
-          },
-        ),
+        '${ApiConstants.verifyMobile}?mobile=$mobile',
       );
+      print('Verify Mobile Response: ${response.data}');
       return response;
     } catch (e) {
       rethrow;
@@ -154,25 +145,6 @@ class ApiService {
       return response;
     } catch (e) {
       print('API Profile error: ${e.toString()}');
-      rethrow;
-    }
-  }
-
-  // Get employee details
-  Future<Response> getEmployeeDetails(int userId) async {
-    try {
-      final response = await _dio.get(
-        '${ApiConstants.employeeDetails}$userId',
-        options: Options(
-          validateStatus: (status) {
-            return status! < 500; // Accept all status codes less than 500
-          },
-        ),
-      );
-      print('Employee Details Response: ${response.data}');
-      return response;
-    } catch (e) {
-      print('API Employee Details error: ${e.toString()}');
       rethrow;
     }
   }
