@@ -92,7 +92,7 @@ class ProfilePage extends StatelessWidget {
               _buildProfileInfoItem('Email',
                   user.email), // You can update this if department info is in the API
               _buildProfileInfoItem(
-                  'Role', user.roles.isNotEmpty ? user.roles[0] : 'N/A'),
+                  'Role', user.roles.isNotEmpty ? user.roles.first.name : 'N/A'),
               _buildProfileInfoItem('Phone', user.phone),
 
               _buildProfileInfoItem(

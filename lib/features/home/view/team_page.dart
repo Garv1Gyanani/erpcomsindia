@@ -3,6 +3,7 @@ import 'package:coms_india/core/di/service_locator.dart';
 import 'package:coms_india/core/services/storage_service.dart';
 import 'package:coms_india/features/auth/controllers/auth_controller.dart';
 import 'package:coms_india/features/auth/models/user_model.dart';
+import 'package:coms_india/features/task/controller/task_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:get/get.dart';
@@ -18,7 +19,7 @@ class SupervisorHomePage extends StatefulWidget {
 class _SupervisorHomePageState extends State<SupervisorHomePage> {
   final AuthController _authController = getIt<AuthController>();
   final StorageService _storageService = getIt<StorageService>();
-
+  final TaskStatusController _taskStatusController = Get.put(TaskStatusController());
   int _selectedIndex = 0;
 
   final List<MenuItemData> _menuItems = [
@@ -33,6 +34,11 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
   @override
   void initState() {
     super.initState();
+
+    // Load task status data when screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _taskStatusController.fetchTaskStatus();
+    });
 
     // For testing - add a dummy user if none exists
     if (_authController.currentUser.value == null) {
@@ -53,7 +59,7 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
         name: 'Test User',
         email: 'test@example.com',
         phone: '1234567890',
-        roles: ['Supervisor'],
+        roles: [RoleModel(id: 1, name: 'Supervisor', guardName: 'supervisor')],
       );
 
       _authController.currentUser.value = testUser;
@@ -62,6 +68,7 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
       // Also save to storage for persistence
       _authController.token.value = 'test-token';
       _storageService.saveAuthData('test-token', testUser);
+      
     } catch (e) {
       print('Error creating test user: $e');
     }
@@ -158,7 +165,7 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              user!.roles.first,
+                              user!.roles.first.name,
                               style: const TextStyle(
                                 fontSize: 10,
                                 color: Colors.white,
@@ -368,36 +375,38 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
             ),
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  "Total Task",
-                  "0",
-                  const Color(0xFFDFECFF), // blue-100
-                  Colors.blue.shade700,
+          Obx(() {
+            return Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    "Total Task",
+                    "${_taskStatusController.taskStatus?.totalTask ?? 0}",
+                    const Color(0xFFDFECFF), // blue-100
+                    Colors.blue.shade700,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildStatCard(
-                  "Pending Task",
-                  "0",
-                  const Color(0xFFFEF9C3), // yellow-100
-                  Colors.amber.shade700,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildStatCard(
+                    "Pending Task",
+                    "${_taskStatusController.taskStatus?.pendingTask ?? 0}",
+                    const Color(0xFFFEF9C3), // yellow-100
+                    Colors.amber.shade700,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildStatCard(
-                  "Completed Task",
-                  "0",
-                  const Color(0xFFDCFCE7), // green-100
-                  Colors.green.shade700,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildStatCard(
+                    "Completed Task",
+                    "${_taskStatusController.taskStatus?.completedTask ?? 0}",
+                    const Color(0xFFDCFCE7), // green-100
+                    Colors.green.shade700,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            );
+          }),
         ],
       ),
     );

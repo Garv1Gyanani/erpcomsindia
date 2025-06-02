@@ -1,3 +1,4 @@
+import 'package:coms_india/features/task/controller/task_controller.dart';
 import 'package:get_it/get_it.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
@@ -14,5 +15,6 @@ Future<void> setupServiceLocator() async {
 
   // Controllers
   getIt.registerSingleton<AuthController>(AuthController());
+  getIt.registerSingleton<TaskStatusController>(TaskStatusController());
   // getIt.registerSingleton<DashboardController>(DashboardController());
 }

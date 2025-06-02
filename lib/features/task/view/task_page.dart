@@ -18,6 +18,7 @@ class _TaskListPageState extends State<TaskListPage> {
   final TextEditingController _searchController = TextEditingController();
   final StorageService _storageService = StorageService();
   final ImagePicker _picker = ImagePicker();
+  
   File? _taskCompletionImage;
 
   List<TaskDetailData> _allTasks = [];

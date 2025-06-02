@@ -204,13 +204,13 @@ class _TicketsPageState extends State<TicketsPage> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              user!.roles.first,
+                              user!.roles.first.name,
                               style: const TextStyle(
                                 fontSize: 10,
                                 color: Colors.white,
                               ),
                             ),
-                          ),
+                          ),  
                         ),
                     ],
                   ),

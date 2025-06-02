@@ -165,7 +165,7 @@ class _AlertsPageState extends State<AlertsPage> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
-                              user!.roles.first,
+                              user!.roles.first.name,
                               style: const TextStyle(
                                 fontSize: 10,
                                 color: Colors.white,
@@ -238,10 +238,10 @@ class _AlertsPageState extends State<AlertsPage> {
       elevation: 0,
       toolbarHeight: 70,
       iconTheme: const IconThemeData(color: Colors.white),
-      title: Column(
+      title: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Alerts & Notifications',
             style: TextStyle(
               color: Colors.white,
@@ -251,7 +251,7 @@ class _AlertsPageState extends State<AlertsPage> {
           ),
           Text(
             "Stay Updated",
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white70,
               fontSize: 14,
               fontWeight: FontWeight.normal,

@@ -148,4 +148,21 @@ class ApiService {
       rethrow;
     }
   }
+
+  Future<Response> getTaskStatus() async {
+    final authData = await _storageService.getAllAuthData();
+    final userData = authData['user']['id'] ?? '';
+
+    print('User ID ================= $userData');
+    try {
+      final response = await _dio.get(
+        '${ApiConstants.taskStatus}/$userData',
+      );
+      print('Task Status Response: ${response.data}');
+      return response;
+    } catch (e) {
+      print('API Task Status error: ${e.toString()}');
+      rethrow;
+    }
+  }
 }

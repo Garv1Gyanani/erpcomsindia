@@ -11,6 +11,7 @@ class StorageService {
   static const String EMPLOYEE_KEY = 'employee_data';
   static const String TOKEN_EXPIRY_KEY = 'token_expiry';
   static const String TOKEN_TYPE_KEY = 'token_type';
+  static const String USER_ID_KEY = 'user_id';
 
   // Get SharedPreferences instance with error handling
   Future<SharedPreferences?> _getPrefs() async {
@@ -39,14 +40,14 @@ class StorageService {
     }
   }
 
-  // Save complete auth data including token, user details, and employee details
   Future<bool> saveAuthData(String token, UserModel user,
       {String tokenType = 'Bearer', int expiresIn = 3600}) async {
     try {
       print('🔄 Starting saveAuthData...');
-      print('📥 Input - Token: ${token.substring(0, Math.min(15, token.length))}...');
+      print(
+          '📥 Input - Token: ${token.substring(0, Math.min(15, token.length))}...');
       print('📥 Input - User: ${user.name}, ID: ${user.id}');
-      print('📥 Input - Roles: ${user.roles}');
+      print('📥 Input - Roles: ${user.roleNames}'); // Using roleNames getter
       print('📥 Input - TokenType: $tokenType, ExpiresIn: $expiresIn');
 
       final prefs = await _getPrefs();
@@ -57,47 +58,41 @@ class StorageService {
 
       // Save token information
       await prefs.setString(TOKEN_KEY, token);
-      print('✅ Saved token with key "$TOKEN_KEY===============$token"');
+      print('✅ Saved token');
 
       await prefs.setString(TOKEN_TYPE_KEY, tokenType);
-      print('✅ Saved token type with key "$TOKEN_TYPE_KEY": $tokenType');
+      print('✅ Saved token type: $tokenType');
 
       // Calculate and save token expiry time
       final expiryTime = DateTime.now()
           .add(Duration(seconds: expiresIn))
           .millisecondsSinceEpoch;
       await prefs.setInt(TOKEN_EXPIRY_KEY, expiryTime);
-      print('✅ Saved token expiry with key "$TOKEN_EXPIRY_KEY": $expiryTime');
+      print('✅ Saved token expiry: $expiryTime');
 
       // Save user data as JSON string
       final userJson = jsonEncode(user.toJson());
       await prefs.setString(USER_KEY, userJson);
-      print('✅ Saved user data with key "$USER_KEY"');
+      print('✅ Saved user data');
 
-      // Save roles separately for easy access
-      if (user.roles.isNotEmpty) {
-        await prefs.setStringList(ROLES_KEY, user.roles);
-        print('✅ Saved roles with key "$ROLES_KEY": ${user.roles}');
+      // Save user ID separately for easy access
+      await prefs.setInt(USER_ID_KEY, user.id);
+      print('✅ Saved user ID: ${user.id}');
+
+      // Save role names separately for easy access
+      if (user.roleNames.isNotEmpty) {
+        await prefs.setStringList(ROLES_KEY, user.roleNames);
+        print('✅ Saved roles: ${user.roleNames}');
       } else {
         print('⚠️ No roles to save');
       }
 
-      // Save employee data if it exists
-      if (user.employee != null) {
-        final employeeJson = jsonEncode(user.employee);
-        await prefs.setString(EMPLOYEE_KEY, employeeJson);
-        print('✅ Saved employee data with key "$EMPLOYEE_KEY"');
-      } else {
-        print('⚠️ No employee data to save');
-      }
-
       // Verify what was saved
-      print('🔍 Verification - saveAuthData:');
-      print('🔍 ${TOKEN_KEY}: ${prefs.getString(TOKEN_KEY) != null}');
-      print('🔍 ${TOKEN_TYPE_KEY}: ${prefs.getString(TOKEN_TYPE_KEY)}');
-      print('🔍 ${USER_KEY}: ${prefs.getString(USER_KEY) != null}');
-      print('🔍 ${ROLES_KEY}: ${prefs.getStringList(ROLES_KEY)}');
-      print('🔍 ${EMPLOYEE_KEY}: ${prefs.getString(EMPLOYEE_KEY) != null}');
+      print('🔍 Verification:');
+      print('🔍 Token saved: ${prefs.getString(TOKEN_KEY) != null}');
+      print('🔍 User ID: ${prefs.getInt(USER_ID_KEY)}');
+      print('🔍 User data saved: ${prefs.getString(USER_KEY) != null}');
+      print('🔍 Roles: ${prefs.getStringList(ROLES_KEY)}');
 
       print('✅ saveAuthData completed successfully');
       return true;
@@ -175,20 +170,21 @@ class StorageService {
     try {
       print('🔍 ========== DEBUG: ALL STORED DATA ==========');
       final prefs = await SharedPreferences.getInstance();
-      
+
       print('🔍 All SharedPreferences keys: ${prefs.getKeys()}');
-      
+
       // Check all possible token keys
       final tokenKeys = ['token', 'auth_token'];
       for (final key in tokenKeys) {
         final value = prefs.getString(key);
         if (value != null) {
-          print('🔍 $key: ${value.substring(0, Math.min(30, value.length))}...');
+          print(
+              '🔍 $key: ${value.substring(0, Math.min(30, value.length))}...');
         } else {
           print('🔍 $key: null');
         }
       }
-      
+
       // Check all possible user keys
       final userKeys = ['user', 'user_data'];
       for (final key in userKeys) {
@@ -204,38 +200,45 @@ class StorageService {
           print('🔍 $key: null');
         }
       }
-      
+
       // Check roles
       final rolesKeys = ['user_roles', 'roles'];
       for (final key in rolesKeys) {
         final value = prefs.getStringList(key);
         print('🔍 $key: $value');
       }
-      
+
       // Check login response
       final loginResponse = prefs.getString('login_response');
       if (loginResponse != null) {
         try {
           final data = json.decode(loginResponse);
-          print('🔍 login_response: User ID=${data['user']?['id']}, Status=${data['status']}');
+          print(
+              '🔍 login_response: User ID=${data['user']?['id']}, Status=${data['status']}');
         } catch (e) {
           print('🔍 login_response: exists but parse error: $e');
         }
       } else {
         print('🔍 login_response: null');
       }
-      
+
       // Check other keys
-      final otherKeys = ['employee_data', 'employee', 'token_type', 'token_expiry'];
+      final otherKeys = [
+        'employee_data',
+        'employee',
+        'token_type',
+        'token_expiry'
+      ];
       for (final key in otherKeys) {
         final value = prefs.get(key);
         if (value != null) {
-          print('🔍 $key: ${value.toString().length > 50 ? '${value.toString().substring(0, 50)}...' : value}');
+          print(
+              '🔍 $key: ${value.toString().length > 50 ? '${value.toString().substring(0, 50)}...' : value}');
         } else {
           print('🔍 $key: null');
         }
       }
-      
+
       print('🔍 ========== END DEBUG ==========');
     } catch (e) {
       print('❌ Error in debugAllStoredData: $e');
@@ -302,7 +305,8 @@ class StorageService {
           final roles = prefs.getStringList(ROLES_KEY);
           if (roles != null && roles.isNotEmpty) {
             user.roles.clear();
-            user.roles.addAll(roles);
+            user.roles.addAll(roles
+                .map((role) => RoleModel(id: 1, name: role, guardName: role)));
           }
 
           return user;
@@ -446,7 +450,7 @@ class StorageService {
       result['tokenExpiry'] = expiryTime;
 
       if (token != null) {
-        result['isTokenValid'] = expiryTime != null
+        result['isTokenValid'] = expiryTime != null   
             ? DateTime.now().millisecondsSinceEpoch < expiryTime
             : true;
       } else {
@@ -482,4 +486,4 @@ class StorageService {
       return result;
     }
   }
-}
+  }

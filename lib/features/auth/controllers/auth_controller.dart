@@ -155,7 +155,7 @@ class AuthController extends GetxController {
           // Update user roles
           if (roles.isNotEmpty) {
             user.roles.clear();
-            user.roles.addAll(roles);
+            user.roles.addAll(roles.map((role) => RoleModel(id: 1, name: role, guardName: role)));
           }
 
           // Save to memory
@@ -275,7 +275,7 @@ class AuthController extends GetxController {
   String? getPrimaryRole() {
     final user = currentUser.value;
     if (user == null || user.roles.isEmpty) return null;
-    return user.roles.first;
+    return user.roles.first.name;
   }
 
   // Get user display name
