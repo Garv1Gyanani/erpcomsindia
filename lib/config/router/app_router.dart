@@ -1,3 +1,4 @@
+import 'package:coms_india/employee/employee.dart';
 import 'package:coms_india/features/home/view/team_page.dart';
 import 'package:coms_india/features/task/view/task_page.dart';
 import 'package:coms_india/splash_screen.dart';
@@ -46,6 +47,11 @@ class AppRouter {
         path: '/tasks',
         name: 'tasks',
         builder: (context, state) => const TaskListPage(),
+      ),
+      GoRoute(
+        path: '/employees',
+        name: 'employees',
+        builder: (context, state) => const EmployeeListPage(),
       ),
     ],
     redirect: (BuildContext context, GoRouterState state) async {

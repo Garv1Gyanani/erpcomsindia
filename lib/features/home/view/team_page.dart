@@ -177,7 +177,9 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
                   ),
                 );
               }),
-              _buildDrawerItem(Icons.dashboard, 'Dashboard'),
+              _buildDrawerItem(Icons.person_add, 'Employee',onNavigate: (){
+                context.goNamed('employees');
+              }),
               _buildDrawerItem(Icons.people, 'Team'),
               _buildDrawerItem(Icons.assignment, 'Tasks'),
               _buildDrawerItem(Icons.notification_important, 'Alerts'),
@@ -195,8 +197,10 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
   }
 
 // Updated drawer item with navigation to tasks
-  Widget _buildDrawerItem(IconData icon, String title,
-      {bool isLogout = false}) {
+  Widget _buildDrawerItem(IconData icon, String title, {
+    bool isLogout = false, 
+    Function()? onNavigate
+  }) {
     return ListTile(
       dense: true,
       visualDensity: VisualDensity.compact,
@@ -218,8 +222,11 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
         // Handle different menu items
         if (title == 'Logout') {
           _authController.logout(context);
+        } else if (onNavigate != null) {
+          // Execute custom navigation function if provided
+          onNavigate();
         } else if (title == 'Tasks') {
-          // Navigate to tasks page
+          // Default tasks navigation
           context.goNamed('tasks');
         } else {
           // Handle other menu item taps
