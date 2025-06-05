@@ -1,5 +1,8 @@
+import 'package:coms_india/employee/add_contact.dart';
+import 'package:coms_india/employee/education_details.dart';
 import 'package:coms_india/employee/employee.dart';
 import 'package:coms_india/employee/employement_screen.dart';
+import 'package:coms_india/employee/govt_details.dart';
 import 'package:coms_india/features/home/view/team_page.dart';
 import 'package:coms_india/features/task/view/task_page.dart';
 import 'package:coms_india/splash_screen.dart';
@@ -60,6 +63,22 @@ class AppRouter {
         builder: (context, state) {
           return EmploymentDetailsSection();
         },
+      ),
+
+      GoRoute(
+        path: '/add-contact',
+        name: 'addContact',
+        builder: (context, state) =>  ContactFormScreen(),
+      ),
+      GoRoute(
+        path: '/education-details',
+        name: 'educationDetails',
+        builder: (context, state) =>  EducationalDetailsSection(),
+      ),
+      GoRoute(
+        path: '/govt-details',
+        name: 'govtDetails',
+        builder: (context, state) =>  GovernmentBankForm(),
       ),
     ],
     redirect: (BuildContext context, GoRouterState state) async {

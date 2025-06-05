@@ -134,6 +134,7 @@ class _EmploymentDetailsSectionState extends State<EmploymentDetailsSection> {
     const double verticalGap = 20.0;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(
@@ -259,6 +260,30 @@ class _EmploymentDetailsSectionState extends State<EmploymentDetailsSection> {
                   ],
                 ),
                 const SizedBox(height: verticalGap),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(AppColors.primary),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: () {
+                          context.go('/add-contact');
+                        },
+                        child: const Text(
+                          'Next',
+                          style: TextStyle(color: Colors.white),
+                        ))
+                  ],
+                ),
               ],
             ),
           ),
