@@ -2,9 +2,7 @@ import 'package:coms_india/core/constants/app_colors.dart';
 import 'package:coms_india/core/di/service_locator.dart';
 import 'package:coms_india/core/services/storage_service.dart';
 import 'package:coms_india/features/auth/controllers/auth_controller.dart';
-import 'package:coms_india/features/auth/models/user_model.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_vector_icons/flutter_vector_icons.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
 

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:coms_india/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:go_router/go_router.dart';
 
 class GovernmentBankForm extends StatefulWidget {
   @override
@@ -43,7 +44,7 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.pop(),
         ),
         title: const Text(
           'ID & Bank Details Form',
@@ -145,7 +146,6 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
                   // },
                 ),
               ),
-
               const SizedBox(width: 12),
               Expanded(
                 child: _buildTextFormField(
@@ -386,7 +386,7 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
             ],
           ),
           const SizedBox(height: 20),
-          
+
           // Joining Kit Checkboxes Row
           Row(
             children: [
@@ -409,7 +409,7 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
               ),
             ],
           ),
-          
+
           CheckboxListTile(
             title: const Text(
               'Hard Copy Joining Kit Received',
@@ -425,9 +425,9 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
             dense: true,
             contentPadding: EdgeInsets.zero,
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Remarks Text Field
           _buildTextAreaField(
             controller: _remarksController,
@@ -484,7 +484,8 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: Colors.red[700]!, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             counterText: '',
           ),
         ),
@@ -532,7 +533,8 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: Colors.red[700]!, width: 2),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             alignLabelWithHint: true,
           ),
         ),
@@ -656,31 +658,8 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Form submitted successfully!'),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
-
-      // Here you would typically send the data to your backend
-      print('Form submitted with data:');
-      print('Aadhar: ${_aadharController.text}');
-      print('PAN: ${_panController.text}');
-      print('UAN: ${_uanController.text}');
-      print('Bank Name: ${_bankNameController.text}');
-      print('Account: ${_accountController.text}');
-      print('IFSC: ${_ifscController.text}');
-      print('IFSC Verified: $_ifscVerified');
-      print('Bank Account Verified: $_bankAccountVerified');
-      print('Soft Copy Joining Kit: $_softCopyJoiningKitReceived');
-      print('Hard Copy Joining Kit: $_hardCopyJoiningKitReceived');
-      print('Remarks: ${_remarksController.text}');
+      // Navigate to nomination form using GoRouter
+      context.goNamed('nominationForm');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
