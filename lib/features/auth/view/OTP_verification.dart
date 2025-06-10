@@ -143,6 +143,18 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
     }
   }
 
+  void _handleKeyPress(RawKeyEvent event, int index) {
+    if (event is RawKeyDownEvent) {
+      if (event.logicalKey == LogicalKeyboardKey.backspace) {
+        if (_otpControllers[index].text.isEmpty && index > 0) {
+          // If current field is empty and not the first field, move to previous field
+          _focusNodes[index - 1].requestFocus();
+          _otpControllers[index - 1].clear();
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -200,30 +212,34 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
                         4,
                         (index) => SizedBox(
                           width: 60,
-                          child: TextFormField(
-                            controller: _otpControllers[index],
-                            focusNode: _focusNodes[index],
-                            keyboardType: TextInputType.number,
-                            textAlign: TextAlign.center,
-                            maxLength: 1,
-                            decoration: InputDecoration(
-                              counterText: '',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
+                          child: RawKeyboardListener(
+                            focusNode: FocusNode(),
+                            onKey: (event) => _handleKeyPress(event, index),
+                            child: TextFormField(
+                              controller: _otpControllers[index],
+                              focusNode: _focusNodes[index],
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              maxLength: 1,
+                              decoration: InputDecoration(
+                                counterText: '',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
-                            ),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
-                            onChanged: (value) {
-                              if (value.length == 1) {
-                                if (index < 3) {
-                                  _focusNodes[index + 1].requestFocus();
-                                } else {
-                                  _focusNodes[index].unfocus();
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              onChanged: (value) {
+                                if (value.length == 1) {
+                                  if (index < 3) {
+                                    _focusNodes[index + 1].requestFocus();
+                                  } else {
+                                    _focusNodes[index].unfocus();
+                                  }
                                 }
-                              }
-                            },
+                              },
+                            ),
                           ),
                         ),
                       ),

@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:app_settings/app_settings.dart';
 
 class TaskListPage extends StatefulWidget {
   const TaskListPage({Key? key}) : super(key: key);
@@ -18,7 +19,7 @@ class _TaskListPageState extends State<TaskListPage> {
   final TextEditingController _searchController = TextEditingController();
   final StorageService _storageService = StorageService();
   final ImagePicker _picker = ImagePicker();
-  
+
   File? _taskCompletionImage;
 
   List<TaskDetailData> _allTasks = [];
@@ -96,17 +97,19 @@ class _TaskListPageState extends State<TaskListPage> {
   void _filterTasks() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    
+
     // First, filter out completed tasks
-    final incompleteTasks = _allTasks.where((task) => 
-      !task.status.toLowerCase().contains('completed')).toList();
+    final incompleteTasks = _allTasks
+        .where((task) => !task.status.toLowerCase().contains('completed'))
+        .toList();
 
     if (_selectedFilter == 'today') {
       // Show only today's tasks
       _filteredTasks = incompleteTasks.where((task) {
         try {
           final taskDate = DateTime.parse(task.fromDate);
-          final taskDateOnly = DateTime(taskDate.year, taskDate.month, taskDate.day);
+          final taskDateOnly =
+              DateTime(taskDate.year, taskDate.month, taskDate.day);
           return taskDateOnly.isAtSameMomentAs(today);
         } catch (e) {
           return false;
@@ -117,7 +120,8 @@ class _TaskListPageState extends State<TaskListPage> {
       final upcomingTasks = incompleteTasks.where((task) {
         try {
           final taskDate = DateTime.parse(task.fromDate);
-          final taskDateOnly = DateTime(taskDate.year, taskDate.month, taskDate.day);
+          final taskDateOnly =
+              DateTime(taskDate.year, taskDate.month, taskDate.day);
           return taskDateOnly.isAfter(today);
         } catch (e) {
           return false;
@@ -140,10 +144,15 @@ class _TaskListPageState extends State<TaskListPage> {
 
     // Apply search filter if there's a search query
     if (_searchController.text.isNotEmpty) {
-      _filteredTasks = _filteredTasks.where((task) =>
-          task.taskName.toLowerCase().contains(_searchController.text.toLowerCase()) ||
-          task.taskDescription.toLowerCase().contains(_searchController.text.toLowerCase())
-      ).toList();
+      _filteredTasks = _filteredTasks
+          .where((task) =>
+              task.taskName
+                  .toLowerCase()
+                  .contains(_searchController.text.toLowerCase()) ||
+              task.taskDescription
+                  .toLowerCase()
+                  .contains(_searchController.text.toLowerCase()))
+          .toList();
     }
   }
 
@@ -243,6 +252,95 @@ class _TaskListPageState extends State<TaskListPage> {
     }
   }
 
+  Future<bool> _requestCameraPermission() async {
+    try {
+      // First check if permission is already granted
+      if (await Permission.camera.isGranted) {
+        return true;
+      }
+
+      // Request permission
+      final status = await Permission.camera.request();
+
+      // If permission is permanently denied, show settings dialog
+      if (status.isPermanentlyDenied) {
+        if (!mounted) return false;
+
+        // Show dialog to open settings
+        final shouldOpenSettings = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Camera Permission Required'),
+            content: const Text(
+              'Camera permission is required to take photos. Please enable it in settings.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Open Settings'),
+              ),
+            ],
+          ),
+        );
+
+        if (shouldOpenSettings == true) {
+          await openAppSettings();
+        }
+        return false;
+      }
+
+      return status.isGranted;
+    } catch (e) {
+      print('Error requesting camera permission: $e');
+      return false;
+    }
+  }
+
+  Future<File?> _takePhoto() async {
+    try {
+      final hasPermission = await _requestCameraPermission();
+      if (!hasPermission) {
+        if (!mounted) return null;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Camera permission is required'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return null;
+      }
+
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 80,
+        preferredCameraDevice: CameraDevice.rear,
+      );
+
+      if (image != null) {
+        return File(image.path);
+      }
+      return null;
+    } catch (e) {
+      print('Error taking photo: $e');
+      if (!mounted) return null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to take photo: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return null;
+    }
+  }
+
   Future<void> _showCompleteTaskDialog(TaskDetailData task) async {
     return showDialog<void>(
       context: context,
@@ -252,8 +350,11 @@ class _TaskListPageState extends State<TaskListPage> {
           builder: (context, setState) {
             return AlertDialog(
               title: const Text('Complete Task'),
+              contentPadding: const EdgeInsets.all(16),
               content: SingleChildScrollView(
-                child: ListBody(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     const Text(
                         'Are you sure you want to mark this task as completed?'),
@@ -266,77 +367,58 @@ class _TaskListPageState extends State<TaskListPage> {
                     if (_taskCompletionImage == null) ...[
                       ElevatedButton.icon(
                         onPressed: () async {
-                          try {
-                            final hasPermission =
-                                await _requestCameraPermission();
-                            if (!hasPermission) {
-                              if (!mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content:
-                                      Text('Camera permission is required'),
-                                  backgroundColor: Colors.red,
-                                  duration: Duration(seconds: 3),
-                                ),
-                              );
-                              return;
-                            }
-
-                            final XFile? image = await _picker.pickImage(
-                              source: ImageSource.camera,
-                              maxWidth: 800,
-                              maxHeight: 800,
-                              imageQuality: 80,
-                              preferredCameraDevice: CameraDevice.rear,
-                            );
-
-                            if (image != null && mounted) {
-                              setState(() {
-                                _taskCompletionImage = File(image.path);
-                              });
-                            }
-                          } catch (e) {
-                            print('Error taking photo: $e');
-                            if (!mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'Failed to take photo: ${e.toString()}'),
-                                backgroundColor: Colors.red,
-                                duration: Duration(seconds: 3),
-                              ),
-                            );
+                          final image = await _takePhoto();
+                          if (image != null && mounted) {
+                            setState(() {
+                              _taskCompletionImage = image;
+                            });
                           }
                         },
                         icon: const Icon(Icons.camera_alt),
                         label: const Text('Take Completion Photo'),
                       ),
                     ] else ...[
-                      Column(
+                      Container(
+                        height: 150,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.file(
+                            _taskCompletionImage!,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          Container(
-                            height: 200,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.file(
-                                _taskCompletionImage!,
-                                fit: BoxFit.cover,
-                              ),
+                          Expanded(
+                            child: TextButton.icon(
+                              onPressed: () async {
+                                final image = await _takePhoto();
+                                if (image != null && mounted) {
+                                  setState(() {
+                                    _taskCompletionImage = image;
+                                  });
+                                }
+                              },
+                              icon: const Icon(Icons.camera_alt, size: 20),
+                              label: const Text('Retake'),
                             ),
                           ),
-                          const SizedBox(height: 10),
-                          TextButton(
+                          TextButton.icon(
                             onPressed: () {
                               setState(() {
                                 _taskCompletionImage = null;
                               });
                             },
-                            child: const Text('Retake Photo'),
+                            icon: const Icon(Icons.delete, size: 20),
+                            label: const Text('Remove'),
                           ),
                         ],
                       ),
@@ -418,13 +500,13 @@ class _TaskListPageState extends State<TaskListPage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       decoration: BoxDecoration(
-                        color: _selectedFilter == 'today' 
-                            ? Colors.blue[50] 
+                        color: _selectedFilter == 'today'
+                            ? Colors.blue[50]
                             : Colors.transparent,
                         border: Border(
                           bottom: BorderSide(
-                            color: _selectedFilter == 'today' 
-                                ? Colors.blue 
+                            color: _selectedFilter == 'today'
+                                ? Colors.blue
                                 : Colors.transparent,
                             width: 2,
                           ),
@@ -435,8 +517,8 @@ class _TaskListPageState extends State<TaskListPage> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: _selectedFilter == 'today' 
-                              ? Colors.blue[700] 
+                          color: _selectedFilter == 'today'
+                              ? Colors.blue[700]
                               : Colors.grey[600],
                         ),
                       ),
@@ -454,13 +536,13 @@ class _TaskListPageState extends State<TaskListPage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       decoration: BoxDecoration(
-                        color: _selectedFilter == 'upcoming' 
-                            ? Colors.orange[50] 
+                        color: _selectedFilter == 'upcoming'
+                            ? Colors.orange[50]
                             : Colors.transparent,
                         border: Border(
                           bottom: BorderSide(
-                            color: _selectedFilter == 'upcoming' 
-                                ? Colors.orange 
+                            color: _selectedFilter == 'upcoming'
+                                ? Colors.orange
                                 : Colors.transparent,
                             width: 2,
                           ),
@@ -471,8 +553,8 @@ class _TaskListPageState extends State<TaskListPage> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: _selectedFilter == 'upcoming' 
-                              ? Colors.orange[700] 
+                          color: _selectedFilter == 'upcoming'
+                              ? Colors.orange[700]
                               : Colors.grey[600],
                         ),
                       ),
@@ -575,15 +657,15 @@ class _TaskListPageState extends State<TaskListPage> {
             Icon(Icons.assignment_outlined, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              _selectedFilter == 'today' 
-                  ? 'No tasks for today' 
+              _selectedFilter == 'today'
+                  ? 'No tasks for today'
                   : 'No upcoming tasks',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Text(
-              _selectedFilter == 'today' 
-                  ? 'You have no tasks scheduled for today' 
+              _selectedFilter == 'today'
+                  ? 'You have no tasks scheduled for today'
                   : 'No tasks scheduled for the next few days',
               style: TextStyle(color: Colors.grey[600]),
             ),
@@ -606,7 +688,7 @@ class _TaskListPageState extends State<TaskListPage> {
 
   Widget _buildTaskCard(TaskDetailData task) {
     final isToday = _isTaskToday(task.fromDate);
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -773,7 +855,8 @@ class _TaskListPageState extends State<TaskListPage> {
       final taskDate = DateTime.parse(dateString);
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
-      final taskDateOnly = DateTime(taskDate.year, taskDate.month, taskDate.day);
+      final taskDateOnly =
+          DateTime(taskDate.year, taskDate.month, taskDate.day);
       return taskDateOnly.isAtSameMomentAs(today);
     } catch (e) {
       return false;
@@ -863,21 +946,6 @@ class _TaskListPageState extends State<TaskListPage> {
         );
       },
     );
-  }
-
-  // Update the _requestCameraPermission method
-  Future<bool> _requestCameraPermission() async {
-    try {
-      if (await Permission.camera.isGranted) {
-        return true;
-      }
-
-      var result = await Permission.camera.request();
-      return result.isGranted;
-    } catch (e) {
-      print('Error requesting camera permission: $e');
-      return false;
-    }
   }
 
   @override

@@ -9,6 +9,7 @@ class EsicDeclarationForm extends StatefulWidget {
   State<EsicDeclarationForm> createState() => _EsicDeclarationFormState();
 }
 
+
 class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
   final _formKey = GlobalKey<FormState>();
   final _insuranceNoController = TextEditingController();
@@ -74,7 +75,7 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
       ),
       child: Column(
         children: [
-          Text(
+          const Text(
             'ESIC (DECLARATION FORM)',
             style: TextStyle(
               fontSize: 24,
@@ -242,7 +243,7 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
         children: [
           Row(
             children: [
-              Expanded(
+              const Expanded(
                 child: Text(
                   'Family Particulars of Insured Person',
                   style: TextStyle(
@@ -417,10 +418,10 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
           // Table Header
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.gray100,
               borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(8)),
+                  BorderRadius.vertical(top: Radius.circular(8)),
             ),
             child: const Row(
               children: [
@@ -485,7 +486,7 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
     final member = familyMembers[index];
     return Container(
       padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         border: Border(
           bottom: BorderSide(color: AppColors.gray300),
         ),
