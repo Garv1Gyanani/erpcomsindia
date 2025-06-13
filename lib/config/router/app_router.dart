@@ -1,6 +1,6 @@
 import 'package:coms_india/features/employee/add_contact.dart';
 import 'package:coms_india/features/employee/education_details.dart';
-import 'package:coms_india/features/employee/employee.dart';
+import 'package:coms_india/features/employee/employee_list.dart';
 import 'package:coms_india/features/employee/employement_screen.dart';
 import 'package:coms_india/features/employee/esic_declaration_form.dart';
 import 'package:coms_india/features/employee/epf_declaration_form.dart';

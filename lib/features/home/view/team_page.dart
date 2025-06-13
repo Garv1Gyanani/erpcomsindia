@@ -65,7 +65,6 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
       _authController.currentUser.value = testUser;
       print('Test user created: ${testUser.name}, roles: ${testUser.roles}');
 
-      // Also save to storage for persistence
       _authController.token.value = 'test-token';
       _storageService.saveAuthData('test-token', testUser);
       
