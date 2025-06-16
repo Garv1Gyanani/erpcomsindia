@@ -126,46 +126,38 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
       ),
       child: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: _buildTextFormField(
-                  controller: _aadharController,
-                  label: 'Aadhar Number *',
-                  hint: 'Enter Aadhar Number',
-                  keyboardType: TextInputType.number,
-                  maxLength: 12,
-                  // validator: (value) {
-                  //   if (value == null || value.isEmpty) {
-                  //     return 'Aadhar number is required';
-                  //   }
-                  //   if (value.length != 12) {
-                  //     return 'Aadhar number must be 12 digits';
-                  //   }
-                  //   return null;
-                  // },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildTextFormField(
-                  controller: _panController,
-                  label: 'PAN Number *',
-                  hint: 'Enter PAN Number',
-                  textCapitalization: TextCapitalization.characters,
-                  maxLength: 10,
-                  // validator: (value) {
-                  //   if (value == null || value.isEmpty) {
-                  //     return 'PAN number is required';
-                  //   }
-                  //   if (value.length != 10) {
-                  //     return 'PAN must be 10 characters';
-                  //   }
-                  //   return null;
-                  // },
-                ),
-              ),
-            ],
+          _buildTextFormField(
+            controller: _aadharController,
+            label: 'Aadhar Number *',
+            hint: 'Enter Aadhar Number',
+            keyboardType: TextInputType.number,
+            maxLength: 12,
+            // validator: (value) {
+            //   if (value == null || value.isEmpty) {
+            //     return 'Aadhar number is required';
+            //   }
+            //   if (value.length != 12) {
+            //     return 'Aadhar number must be 12 digits';
+            //   }
+            //   return null;
+            // },
+          ),
+          const SizedBox(width: 12),
+          _buildTextFormField(
+            controller: _panController,
+            label: 'PAN Number *',
+            hint: 'Enter PAN Number',
+            textCapitalization: TextCapitalization.characters,
+            maxLength: 10,
+            // validator: (value) {
+            //   if (value == null || value.isEmpty) {
+            //     return 'PAN number is required';
+            //   }
+            //   if (value.length != 10) {
+            //     return 'PAN must be 10 characters';
+            //   }
+            //   return null;
+            // },
           ),
           const SizedBox(height: 16),
           _buildTextFormField(
@@ -176,25 +168,17 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
             maxLength: 12,
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildTextFormField(
-                  controller: _pfController,
-                  label: 'PF Member ID',
-                  hint: 'Enter PF Member ID',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildTextFormField(
-                  controller: _esicController,
-                  label: 'ESIC Number',
-                  hint: 'Enter ESIC Number',
-                  keyboardType: TextInputType.number,
-                ),
-              ),
-            ],
+          _buildTextFormField(
+            controller: _pfController,
+            label: 'PF Member ID',
+            hint: 'Enter PF Member ID',
+          ),
+          const SizedBox(width: 12),
+          _buildTextFormField(
+            controller: _esicController,
+            label: 'ESIC Number',
+            hint: 'Enter ESIC Number',
+            keyboardType: TextInputType.number,
           ),
           const SizedBox(height: 20),
           Row(
@@ -243,68 +227,52 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
       ),
       child: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: _buildTextFormField(
-                  controller: _bankNameController,
-                  label: 'Bank Name *',
-                  hint: 'Enter Bank Name',
-                  // validator: (value) {
-                  //   if (value == null || value.isEmpty) {
-                  //     return 'Bank name is required';
-                  //   }
-                  //   return null;
-                  // },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildTextFormField(
-                  controller: _accountController,
-                  label: 'Account Number *',
-                  hint: 'Enter Account Number',
-                  keyboardType: TextInputType.number,
-                  // validator: (value) {
-                  //   if (value == null || value.isEmpty) {
-                  //     return 'Account number is required';
-                  //   }
-                  //   return null;
-                  // },
-                ),
-              ),
-            ],
+          _buildTextFormField(
+            controller: _bankNameController,
+            label: 'Bank Name *',
+            hint: 'Enter Bank Name',
+            // validator: (value) {
+            //   if (value == null || value.isEmpty) {
+            //     return 'Bank name is required';
+            //   }
+            //   return null;
+            // },
+          ),
+          const SizedBox(width: 12),
+          _buildTextFormField(
+            controller: _accountController,
+            label: 'Account Number *',
+            hint: 'Enter Account Number',
+            keyboardType: TextInputType.number,
+            // validator: (value) {
+            //   if (value == null || value.isEmpty) {
+            //     return 'Account number is required';
+            //   }
+            //   return null;
+            // },
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildTextFormField(
-                  controller: _ifscController,
-                  label: 'IFSC Code *',
-                  hint: 'Enter IFSC Code',
-                  textCapitalization: TextCapitalization.characters,
-                  maxLength: 11,
-                  // validator: (value) {
-                  //   if (value == null || value.isEmpty) {
-                  //     return 'IFSC code is required';
-                  //   }
-                  //   if (value.length != 11) {
-                  //     return 'IFSC code must be 11 characters';
-                  //   }
-                  //   return null;
-                  // },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildFileUploadButton(
-                  'Bank Passbook / Cheque Book',
-                  _bankPassbookImage,
-                  () => _pickImage('bank_passbook'),
-                ),
-              ),
-            ],
+          _buildTextFormField(
+            controller: _ifscController,
+            label: 'IFSC Code *',
+            hint: 'Enter IFSC Code',
+            textCapitalization: TextCapitalization.characters,
+            maxLength: 11,
+            // validator: (value) {
+            //   if (value == null || value.isEmpty) {
+            //     return 'IFSC code is required';
+            //   }
+            //   if (value.length != 11) {
+            //     return 'IFSC code must be 11 characters';
+            //   }
+            //   return null;
+            // },
+          ),
+          const SizedBox(width: 12),
+          _buildFileUploadButton(
+            'Bank Passbook / Cheque Book',
+            _bankPassbookImage,
+            () => _pickImage('bank_passbook'),
           ),
           const SizedBox(height: 16),
           Row(

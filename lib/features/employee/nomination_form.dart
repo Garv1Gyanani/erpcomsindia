@@ -199,13 +199,6 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: const Row(
         children: [
@@ -388,50 +381,34 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
         const SizedBox(height: 16),
 
         // Relationship and Date of Birth Row
-        Row(
-          children: [
-            Expanded(
-              child: _buildMobileTextFormField(
-                controller: nominees[index].relationshipController,
-                label: 'Relationship with Member',
-                hint: 'Wife/Husband/Son/Daughter',
-                icon: Icons.family_restroom,
-                isRequired: true,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildDateField(index),
-            ),
-          ],
+        _buildMobileTextFormField(
+          controller: nominees[index].relationshipController,
+          label: 'Relationship with Member',
+          hint: 'Wife/Husband/Son/Daughter',
+          icon: Icons.family_restroom,
+          isRequired: true,
         ),
+        const SizedBox(width: 12),
+        _buildDateField(index),
         const SizedBox(height: 16),
 
         // Share and Guardian Row
-        Row(
-          children: [
-            Expanded(
-              child: _buildMobileTextFormField(
-                controller: nominees[index].shareController,
-                label: 'Share of Provident Fund',
-                hint: '50% or ₹Amount',
-                icon: Icons.percent,
-                keyboardType: TextInputType.text,
-                isRequired: true,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildMobileTextFormField(
-                controller: nominees[index].guardianController,
-                label: 'Guardian (if Nominee is Minor)',
-                hint: 'Guardian name & address',
-                icon: Icons.shield,
-                maxLines: 2,
-              ),
-            ),
-          ],
+        _buildMobileTextFormField(
+          controller: nominees[index].shareController,
+          label: 'Share of Provident Fund',
+          hint: '50% or ₹Amount',
+          icon: Icons.percent,
+          keyboardType: TextInputType.text,
+          isRequired: true,
         ),
+        _buildMobileTextFormField(
+          controller: nominees[index].guardianController,
+          label: 'Guardian (if Nominee is Minor)',
+          hint: 'Guardian name & address',
+          icon: Icons.shield,
+          maxLines: 2,
+        ),
+        const SizedBox(width: 12),
         const SizedBox(height: 16),
 
         // Additional Details Section
@@ -896,13 +873,6 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.info.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Row(
         children: [

@@ -2,7 +2,47 @@ import 'package:coms_india/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-class ContactFormScreen extends StatelessWidget {
+class ContactFormScreen extends StatefulWidget {
+  @override
+  State<ContactFormScreen> createState() => _ContactFormScreenState();
+}
+
+class _ContactFormScreenState extends State<ContactFormScreen> {
+  bool sameAsPresent = false;
+
+  // Controllers for Present Address
+  final Map<String, TextEditingController> presentControllers = {
+    'Street Address': TextEditingController(),
+    'City': TextEditingController(),
+    'District': TextEditingController(),
+    'Post Office': TextEditingController(),
+    'Thana': TextEditingController(),
+    'Pincode': TextEditingController(),
+  };
+
+  // Controllers for Permanent Address
+  final Map<String, TextEditingController> permanentControllers = {
+    'Street Address': TextEditingController(),
+    'City': TextEditingController(),
+    'District': TextEditingController(),
+    'Post Office': TextEditingController(),
+    'Thana': TextEditingController(),
+    'Pincode': TextEditingController(),
+  };
+
+  @override
+  void dispose() {
+    presentControllers.values.forEach((c) => c.dispose());
+    permanentControllers.values.forEach((c) => c.dispose());
+    super.dispose();
+  }
+
+  void _copyPresentToPermanent() {
+    presentControllers.forEach((key, controller) {
+      permanentControllers[key]?.text = controller.text;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -15,7 +55,7 @@ class ContactFormScreen extends StatelessWidget {
         title: const Text(
           'Contact Details',
           style: TextStyle(
-              color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
+              color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18),
         ),
         backgroundColor: Colors.red,
         elevation: 1.5,
@@ -25,9 +65,8 @@ class ContactFormScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Row 1
+            // Contact Fields
             Column(
-              // crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildLabeledTextField(
                   context: context,
@@ -53,30 +92,47 @@ class ContactFormScreen extends StatelessWidget {
             ),
             SizedBox(height: 16),
 
-            // Row 2
+            // Present Address
+            _buildAddressSection(
+              context: context,
+              title: 'Present Address',
+              isRequired: true,
+              controllers: presentControllers,
+            ),
+            SizedBox(height: 10),
+
+            // Checkbox to copy address
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: _buildAddressSection(
-                    context: context,
-                    title: 'Present Address',
-                    isRequired: true,
-                  ),
+                Checkbox(
+                  value: sameAsPresent,
+                  onChanged: (value) {
+                    setState(() {
+                      sameAsPresent = value ?? false;
+                      if (sameAsPresent) {
+                        _copyPresentToPermanent();
+                      } else {
+                        permanentControllers.forEach((key, controller) {
+                          controller.clear();
+                        });
+                      }
+                    });
+                  },
                 ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: _buildAddressSection(
-                    context: context,
-                    title: 'Permanent Address',
-                    isRequired: true,
-                  ),
-                ),
+                const Text("Same as Present Address"),
               ],
+            ),
+
+            // Permanent Address
+            _buildAddressSection(
+              context: context,
+              title: 'Permanent Address',
+              isRequired: true,
+              controllers: permanentControllers,
             ),
             SizedBox(height: 16),
 
-            // Relationship
+            // Relationship Field
             _buildLabeledTextField(
               context: context,
               label: 'Relationship with Emergency Contact',
@@ -191,15 +247,9 @@ class ContactFormScreen extends StatelessWidget {
     required BuildContext context,
     required String title,
     bool isRequired = false,
+    required Map<String, TextEditingController> controllers,
   }) {
-    final addressFields = [
-      'Street Address',
-      'City',
-      'District',
-      'Post Office',
-      'Thana',
-      'Pincode',
-    ];
+    final addressFields = controllers.keys.toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,6 +269,7 @@ class ContactFormScreen extends StatelessWidget {
           return Padding(
             padding: const EdgeInsets.only(bottom: 10.0),
             child: TextFormField(
+              controller: controllers[field],
               style: TextStyle(fontSize: 13),
               decoration: InputDecoration(
                 hintText: field,

@@ -131,75 +131,52 @@ class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
               ],
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: _buildLabeledInputColumn(
-                    label: "Degree",
-                    hintText: "e.g. B.Tech, M.Sc",
-                    controller: entry.degreeController,
-                    fieldWidth: double.infinity,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 3,
-                  child: _buildLabeledInputColumn(
-                    label: "University/Institute",
-                    hintText: "University or Institute name",
-                    controller: entry.universityController,
-                    fieldWidth: double.infinity,
-                  ),
-                ),
-              ],
+            _buildLabeledInputColumn(
+              label: "Degree",
+              hintText: "e.g. B.Tech, M.Sc",
+              controller: entry.degreeController,
+              fieldWidth: double.infinity,
+            ),
+            const SizedBox(width: 12),
+            _buildLabeledInputColumn(
+              label: "University/Institute",
+              hintText: "University or Institute name",
+              controller: entry.universityController,
+              fieldWidth: double.infinity,
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: _buildLabeledInputColumn(
-                    label: "Specialization",
-                    hintText: "Field of study",
-                    controller: entry.specializationController,
-                    fieldWidth: double.infinity,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildLabeledInputColumn(
-                    label: "From Year",
-                    hintText: "YYYY",
-                    controller: entry.fromYearController,
-                    keyboardType: TextInputType.number,
-                    isYearField: true,
-                    fieldWidth: double.infinity,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildLabeledInputColumn(
-                    label: "To Year",
-                    hintText: "YYYY",
-                    controller: entry.toYearController,
-                    keyboardType: TextInputType.number,
-                    isYearField: true,
-                    fieldWidth: double.infinity,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildLabeledInputColumn(
-                    label: "Percentage (%)",
-                    hintText: "78.5",
-                    controller: entry.percentageController,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    fieldWidth: double.infinity,
-                  ),
-                ),
-              ],
+            _buildLabeledInputColumn(
+              label: "Specialization",
+              hintText: "Field of study",
+              controller: entry.specializationController,
+              fieldWidth: double.infinity,
+            ),
+            const SizedBox(width: 12),
+            _buildLabeledInputColumn(
+              label: "From Year",
+              hintText: "YYYY",
+              controller: entry.fromYearController,
+              keyboardType: TextInputType.number,
+              isYearField: true,
+              fieldWidth: double.infinity,
+            ),
+            const SizedBox(width: 12),
+            _buildLabeledInputColumn(
+              label: "To Year",
+              hintText: "YYYY",
+              controller: entry.toYearController,
+              keyboardType: TextInputType.number,
+              isYearField: true,
+              fieldWidth: double.infinity,
+            ),
+            const SizedBox(width: 12),
+            _buildLabeledInputColumn(
+              label: "Percentage (%)",
+              hintText: "78.5",
+              controller: entry.percentageController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              fieldWidth: double.infinity,
             ),
           ],
         ),

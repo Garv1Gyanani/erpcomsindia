@@ -147,7 +147,7 @@ class _EmploymentDetailsSectionState extends State<EmploymentDetailsSection> {
         ),
         title: const Text(
           'Employment Details',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
         ),
         backgroundColor: const Color(AppColors.primary),
       ),
@@ -160,105 +160,72 @@ class _EmploymentDetailsSectionState extends State<EmploymentDetailsSection> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: _buildDropdownField(
-                        label: 'Department',
-                        isRequired: true,
-                        value: _selectedDepartment,
-                        items: _departmentOptions,
-                        onChanged: (value) =>
-                            setState(() => _selectedDepartment = value),
-                        placeholder: 'Select Department',
-                      ),
-                    ),
-                    const SizedBox(width: horizontalGap),
-                    Expanded(
-                      child: _buildDropdownField(
-                        label: 'Designation',
-                        value: _selectedDesignation,
-                        items: _designationOptions,
-                        onChanged: (value) =>
-                            setState(() => _selectedDesignation = value),
-                        placeholder: 'Select Designation',
-                      ),
-                    ),
-                  ],
+                _buildDropdownField(
+                  label: 'Department',
+                  isRequired: true,
+                  value: _selectedDepartment,
+                  items: _departmentOptions,
+                  onChanged: (value) =>
+                      setState(() => _selectedDepartment = value),
+                  placeholder: 'Select Department',
+                ),
+                const SizedBox(width: horizontalGap),
+                _buildDropdownField(
+                  label: 'Designation',
+                  value: _selectedDesignation,
+                  items: _designationOptions,
+                  onChanged: (value) =>
+                      setState(() => _selectedDesignation = value),
+                  placeholder: 'Select Designation',
                 ),
                 const SizedBox(height: verticalGap),
 
                 // Second Row: Site Name, Location
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: _buildDropdownField(
-                        label: 'Site Name',
-                        value: _selectedSite,
-                        items: _siteOptions,
-                        onChanged: (value) =>
-                            setState(() => _selectedSite = value),
-                        placeholder: 'Select Site',
-                      ),
-                    ),
-                    const SizedBox(width: horizontalGap),
-                    Expanded(
-                      child: _buildDropdownField(
-                        label: 'Location',
-                        isRequired: true,
-                        value: _selectedLocation,
-                        items: _locationOptions,
-                        onChanged: (value) =>
-                            setState(() => _selectedLocation = value),
-                        placeholder: 'Select Location',
-                      ),
-                    ),
-                  ],
+                _buildDropdownField(
+                  label: 'Site Name',
+                  value: _selectedSite,
+                  items: _siteOptions,
+                  onChanged: (value) =>
+                      setState(() => _selectedSite = value),
+                  placeholder: 'Select Site',
+                ),
+                const SizedBox(width: horizontalGap),
+                _buildDropdownField(
+                  label: 'Location',
+                  isRequired: true,
+                  value: _selectedLocation,
+                  items: _locationOptions,
+                  onChanged: (value) =>
+                      setState(() => _selectedLocation = value),
+                  placeholder: 'Select Location',
                 ),
                 const SizedBox(height: verticalGap),
 
                 // Third Row: Mode of Joining, Punching Code
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: _buildDropdownField(
-                        label: 'Mode of Joining',
-                        isRequired: true,
-                        value: _selectedModeOfJoining,
-                        items: _modeOfJoiningOptions,
-                        onChanged: (value) =>
-                            setState(() => _selectedModeOfJoining = value),
-                        placeholder: 'Select Mode',
-                      ),
-                    ),
-                    const SizedBox(width: horizontalGap),
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _punchingCodeController,
-                        label: 'Punching Code',
-                        placeholder: 'Enter Code',
-                      ),
-                    ),
-                  ],
+                _buildDropdownField(
+                  label: 'Mode of Joining',
+                  isRequired: true,
+                  value: _selectedModeOfJoining,
+                  items: _modeOfJoiningOptions,
+                  onChanged: (value) =>
+                      setState(() => _selectedModeOfJoining = value),
+                  placeholder: 'Select Mode',
+                ),
+                const SizedBox(width: horizontalGap),
+                _buildTextField(
+                  controller: _punchingCodeController,
+                  label: 'Punching Code',
+                  placeholder: 'Enter Code',
                 ),
                 const SizedBox(height: verticalGap),
 
                 // Fourth Row: Date of Exit
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildDateField(
-                        label: 'Date of Exit',
-                        selectedDate: _dateOfExit,
-                        onTap: () => _selectDate(context),
-                      ),
-                    ),
-                    const Expanded(child: SizedBox()),
-                  ],
+                _buildDateField(
+                  label: 'Date of Exit',
+                  selectedDate: _dateOfExit,
+                  onTap: () => _selectDate(context),
                 ),
+                // const Expanded(child: SizedBox()),
                 const SizedBox(height: verticalGap),
 
                 Row(

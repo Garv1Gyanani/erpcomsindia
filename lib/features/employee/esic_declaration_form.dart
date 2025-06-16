@@ -26,6 +26,7 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
         title: const Text(
           'ESIC Declaration Form',
           style: TextStyle(
+            fontSize: 10,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
@@ -599,7 +600,7 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
             borderRadius: BorderRadius.circular(16),
           ),
           padding: const EdgeInsets.symmetric(vertical: 18),
-          elevation: 4,
+          elevation: 0,
         ),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,

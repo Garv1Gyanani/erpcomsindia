@@ -85,7 +85,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.goNamed('home'),
         ),
         backgroundColor: Colors.red,
         title:
@@ -102,7 +102,6 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                 sectionTitle('Basic Information'),
                 rowWrap([
                   _buildTextField(_nameController, 'Employee Name *'),
-                  // _buildTextField(_idController, 'Employee ID *'),
                 ]),
                 rowWrap([
                   _buildDropdown('Gender *', _genderOptions, _selectedGender,
@@ -188,69 +187,61 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                     child: Column(
                       children: [
                         // First Row: Name and Relation
-                        Row(
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Name',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.w500)),
-                                  const SizedBox(height: 4),
-                                  TextFormField(
-                                    controller: member.nameController,
-                                    decoration: InputDecoration(
-                                      filled: true,
-                                      fillColor: Colors.white,
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide: BorderSide(
-                                            color: Colors.grey.shade300),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide: BorderSide(
-                                            color: Colors.grey.shade300),
-                                      ),
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 8),
-                                    ),
-                                  ),
-                                ],
+                            const Text('Name',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w500)),
+                            const SizedBox(height: 4),
+                            TextFormField(
+                              controller: member.nameController,
+                              decoration: InputDecoration(
+                                filled: true,
+                                fillColor: Colors.white,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                      color: Colors.grey.shade300),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                      color: Colors.grey.shade300),
+                                ),
+                                contentPadding:
+                                    const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Relation',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.w500)),
-                                  const SizedBox(height: 4),
-                                  TextFormField(
-                                    controller: member.relationController,
-                                    decoration: InputDecoration(
-                                      filled: true,
-                                      fillColor: Colors.white,
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide: BorderSide(
-                                            color: Colors.grey.shade300),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide: BorderSide(
-                                            color: Colors.grey.shade300),
-                                      ),
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 8),
-                                    ),
-                                  ),
-                                ],
+                          ],
+                        ),
+                        const SizedBox(width: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Relation',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w500)),
+                            const SizedBox(height: 4),
+                            TextFormField(
+                              controller: member.relationController,
+                              decoration: InputDecoration(
+                                filled: true,
+                                fillColor: Colors.white,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                      color: Colors.grey.shade300),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                      color: Colors.grey.shade300),
+                                ),
+                                contentPadding:
+                                    const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
                               ),
                             ),
                           ],
@@ -258,84 +249,76 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                         const SizedBox(height: 12),
 
                         // Second Row: Occupation and Date of Birth
-                        Row(
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Occupation',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.w500)),
-                                  const SizedBox(height: 4),
-                                  TextFormField(
-                                    controller: member.occupationController,
-                                    decoration: InputDecoration(
-                                      filled: true,
-                                      fillColor: Colors.white,
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide: BorderSide(
-                                            color: Colors.grey.shade300),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        borderSide: BorderSide(
-                                            color: Colors.grey.shade300),
-                                      ),
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 8),
-                                    ),
-                                  ),
-                                ],
+                            const Text('Occupation',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w500)),
+                            const SizedBox(height: 4),
+                            TextFormField(
+                              controller: member.occupationController,
+                              decoration: InputDecoration(
+                                filled: true,
+                                fillColor: Colors.white,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                      color: Colors.grey.shade300),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide: BorderSide(
+                                      color: Colors.grey.shade300),
+                                ),
+                                contentPadding:
+                                    const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Date of Birth',
+                          ],
+                        ),
+                        const SizedBox(width: 16),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Date of Birth',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w500)),
+                            const SizedBox(height: 4),
+                            InkWell(
+                              onTap: () => _selectDate(
+                                  context,
+                                  (date) => setState(
+                                      () => member.dateOfBirth = date)),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  border: Border.all(
+                                      color: Colors.grey.shade300),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      member.dateOfBirth != null
+                                          ? '${member.dateOfBirth!.day.toString().padLeft(2, '0')}-${member.dateOfBirth!.month.toString().padLeft(2, '0')}-${member.dateOfBirth!.year}'
+                                          : 'dd-mm-yyyy',
                                       style: TextStyle(
-                                          fontWeight: FontWeight.w500)),
-                                  const SizedBox(height: 4),
-                                  InkWell(
-                                    onTap: () => _selectDate(
-                                        context,
-                                        (date) => setState(
-                                            () => member.dateOfBirth = date)),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        border: Border.all(
-                                            color: Colors.grey.shade300),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            member.dateOfBirth != null
-                                                ? '${member.dateOfBirth!.day.toString().padLeft(2, '0')}-${member.dateOfBirth!.month.toString().padLeft(2, '0')}-${member.dateOfBirth!.year}'
-                                                : 'dd-mm-yyyy',
-                                            style: TextStyle(
-                                              color: member.dateOfBirth != null
-                                                  ? Colors.black
-                                                  : Colors.grey.shade600,
-                                            ),
-                                          ),
-                                          Icon(Icons.calendar_today,
-                                              size: 16,
-                                              color: Colors.grey.shade600),
-                                        ],
+                                        color: member.dateOfBirth != null
+                                            ? Colors.black
+                                            : Colors.grey.shade600,
                                       ),
                                     ),
-                                  ),
-                                ],
+                                    Icon(Icons.calendar_today,
+                                        size: 16,
+                                        color: Colors.grey.shade600),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -410,7 +393,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
         decoration: InputDecoration(
           labelText: label,
           filled: true,
-          fillColor: Colors.grey.shade100,
+          fillColor: Colors.white,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),
         validator: (value) {
@@ -431,7 +414,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
         decoration: InputDecoration(
           labelText: label,
           filled: true,
-          fillColor: Colors.grey.shade100,
+          fillColor: Colors.white,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),
         value: selectedValue,
