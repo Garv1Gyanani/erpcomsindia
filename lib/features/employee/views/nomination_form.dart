@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:coms_india/core/constants/app_colors.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:provider/provider.dart';
+import '../controllers/employee_provider.dart';
+import '../../../core/utils/validation_utils.dart';
 
 class NominationFormScreen extends StatefulWidget {
   @override
@@ -11,6 +15,47 @@ class NominationFormScreen extends StatefulWidget {
 
 class _NominationFormScreenState extends State<NominationFormScreen> {
   final _formKey = GlobalKey<FormState>();
+
+  // Validation function
+  String? isRequired(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'This field is required';
+    }
+    return null;
+  }
+
+  Widget _buildLabelWithRedAsterisk(String label) {
+    List<String> parts = label.split(' *');
+    if (parts.length > 1) {
+      return RichText(
+        text: TextSpan(
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            color: AppColors.gray700,
+          ),
+          children: [
+            TextSpan(text: parts[0]),
+            const TextSpan(
+              text: ' *',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return Text(
+      label,
+      style: const TextStyle(
+        fontWeight: FontWeight.w600,
+        fontSize: 14,
+        color: AppColors.gray700,
+      ),
+    );
+  }
 
   // Controllers for exactly 4 nominees as per the original form
   List<NomineeData> nominees = [
@@ -34,13 +79,28 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
   File? _witness1Signature;
   File? _witness2Signature;
 
+  // Other Documents Data
+  List<OtherDocumentData> otherDocuments = [OtherDocumentData()];
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            // Check if there's something to pop, otherwise go to EPF declaration
+            if (context.canPop()) {
+              context.pop(); // Go back to EPF declaration
+            } else {
+              context.goNamed('epf_declaration'); // Fallback to EPF declaration
+            }
+          },
         ),
         title: const Text(
           'Nomination & Declaration Form',
@@ -73,6 +133,8 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
               _buildFamilyMembersList(),
               const SizedBox(height: 32),
               _buildWitnessSection(),
+              const SizedBox(height: 24),
+              _buildOtherDocumentsSection(),
               const SizedBox(height: 24),
               _buildDeclarationSection(),
               const SizedBox(height: 24),
@@ -599,6 +661,267 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
     );
   }
 
+  Widget _buildOtherDocumentsSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.attach_file,
+                        color: Colors.orange, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Other Documents',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.gray800,
+                    ),
+                  ),
+                ],
+              ),
+              ElevatedButton(
+                onPressed: _addOtherDocument,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  '+ Add Document',
+                  style: TextStyle(color: Colors.white, fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info, color: Colors.blue, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Upload any additional documents like experience letters, certificates, or other supporting documents.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          ...otherDocuments.asMap().entries.map((entry) {
+            int index = entry.key;
+            OtherDocumentData document = entry.value;
+            return _buildOtherDocumentCard(document, index);
+          }).toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOtherDocumentCard(OtherDocumentData document, int index) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.grey.shade50,
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Document Name',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: AppColors.gray700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: document.nameController,
+                      style: const TextStyle(fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: 'e.g., Experience Letter',
+                        hintStyle: const TextStyle(
+                            color: AppColors.gray400, fontSize: 12),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                              color: AppColors.primary, width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 14),
+                      ),
+                      validator: ValidationUtils.validateDocumentName,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Document File',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: AppColors.gray700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: () => _pickDocument(index),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 14),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.white,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text('Choose File',
+                                  style: TextStyle(fontSize: 12)),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                document.file != null
+                                    ? document.file!.path.split('/').last
+                                    : 'No file chosen',
+                                style: TextStyle(
+                                  color: document.file != null
+                                      ? Colors.green
+                                      : Colors.grey.shade600,
+                                  fontSize: 12,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (otherDocuments.length > 1)
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.red),
+                  onPressed: () => _removeOtherDocument(index),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _addOtherDocument() {
+    setState(() {
+      otherDocuments.add(OtherDocumentData());
+    });
+  }
+
+  void _removeOtherDocument(int index) {
+    if (otherDocuments.length > 1) {
+      setState(() {
+        otherDocuments[index].dispose();
+        otherDocuments.removeAt(index);
+      });
+    }
+  }
+
+  Future<void> _pickDocument(int index) async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+      );
+
+      if (result != null && result.files.single.path != null) {
+        setState(() {
+          otherDocuments[index].file = File(result.files.single.path!);
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('File selected: ${result.files.single.name}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error picking file: $e')),
+      );
+    }
+  }
+
   Widget _buildDeclarationSection() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -711,9 +1034,7 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
     return Column(
       children: [
         ElevatedButton(
-          onPressed: () {
-            context.pushNamed('esicDeclarationForm');
-          },
+          onPressed: _submitForm,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
@@ -729,7 +1050,7 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
               Icon(Icons.navigate_next, size: 20),
               SizedBox(width: 8),
               Text(
-                'Next',
+                'Submit All Data',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -754,6 +1075,9 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
   }
 
   void _submitForm() {
+    print('🐛 DEBUG: ===== NOMINATION FORM SUBMISSION (FINAL SCREEN) =====');
+    print('🐛 DEBUG: This is the 8th and final screen!');
+
     if (!_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -780,21 +1104,59 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
       return;
     }
 
-    // Validate that at least one nominee is filled
-    bool hasNominee = nominees.any((nominee) => nominee.hasAnyData());
+    // Enhanced validation check for API requirements
+    List<String> validationIssues = [];
 
-    if (!hasNominee) {
+    // Check witness signatures (API requirement)
+    if (_witness1Signature == null) {
+      validationIssues.add('• Witness 1 signature file is required for API');
+    }
+    if (_witness2Signature == null) {
+      validationIssues.add('• Witness 2 signature file is required for API');
+    }
+
+    // Check EPF nominee DOB (API requirement: epf.0.dob)
+    bool hasValidEpfNominee = false;
+    for (var nominee in nominees) {
+      if (nominee.hasAnyData() && nominee.dateOfBirth != null) {
+        hasValidEpfNominee = true;
+        break;
+      }
+    }
+    if (!hasValidEpfNominee) {
+      validationIssues
+          .add('• At least one EPF nominee with date of birth is required');
+    }
+
+    // Show detailed validation issues if any
+    if (validationIssues.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.warning, color: Colors.white),
-              SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  'Please add at least one nominee',
-                  overflow: TextOverflow.ellipsis,
-                ),
+              const Row(
+                children: [
+                  Icon(Icons.warning, color: Colors.white),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'API Validation Issues:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ...validationIssues.map((issue) => Padding(
+                    padding: const EdgeInsets.only(bottom: 2),
+                    child: Text(issue, style: const TextStyle(fontSize: 12)),
+                  )),
+              const SizedBox(height: 8),
+              const Text(
+                'Please upload required files before submitting.',
+                style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic),
               ),
             ],
           ),
@@ -804,49 +1166,237 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
           margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 6),
         ),
       );
       return;
     }
 
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                'Nomination form submitted successfully!',
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
+    try {
+      // ✅ Update provider with nomination form data (FINAL SCREEN)
+      final provider = context.read<EmployeeProvider>();
 
-    // Here you would typically send the data to your backend
-    print('Nomination Form submitted:');
-    for (int i = 0; i < nominees.length; i++) {
-      if (nominees[i].hasAnyData()) {
-        print('Nominee ${i + 1}:');
-        print('  Name: ${nominees[i].nameController.text}');
-        print('  Address: ${nominees[i].addressController.text}');
-        print('  Relationship: ${nominees[i].relationshipController.text}');
-        print('  DOB: ${nominees[i].dateOfBirth}');
-        print('  Share: ${nominees[i].shareController.text}');
-        print('  Guardian: ${nominees[i].guardianController.text}');
-        print('  Contact: ${nominees[i].contactController.text}');
+      // Collect EPF nominees data
+      final epfNominees = nominees
+          .where((nominee) => nominee.hasAnyData())
+          .map((nominee) => {
+                'name': nominee.nameController.text,
+                'address': nominee.addressController.text,
+                'relationship': nominee.relationshipController.text,
+                'dob': nominee.dateOfBirth != null
+                    ? nominee.dateOfBirth!.toIso8601String().split('T')[0]
+                    : '1970-05-10', // Required field - provide default if missing
+                'share': nominee.shareController.text,
+                'guardian': nominee.guardianController.text,
+              })
+          .toList();
+
+      // Collect EPS family members data
+      final epsFamily = familyMembers
+          .where((member) => member.hasAnyData())
+          .map((member) => {
+                'name': member.nameController.text,
+                'age': member.ageController.text,
+                'relationship': member.relationshipController.text,
+              })
+          .toList();
+
+      // Collect other documents data
+      final otherDocumentsData = otherDocuments
+          .where((doc) => doc.hasAnyData())
+          .map((doc) => {
+                'name': doc.nameController.text,
+                'file': doc.file,
+              })
+          .toList();
+
+      final nominationData = {
+        'witness1_name': _witness1Controller.text,
+        'witness2_name': _witness2Controller.text,
+        'witness1_signature': _witness1Signature, // Add witness signature files
+        'witness2_signature': _witness2Signature, // Add witness signature files
+        'epf': epfNominees,
+        'eps': epsFamily,
+        'other_documents': otherDocumentsData, // Add other documents
+      };
+
+      print('🐛 DEBUG: EPF Nominees: ${epfNominees.length}');
+      print('🐛 DEBUG: EPS Family Members: ${epsFamily.length}');
+      print('🐛 DEBUG: Witness 1: ${_witness1Controller.text}');
+      print('🐛 DEBUG: Witness 2: ${_witness2Controller.text}');
+
+      // 🚀 THIS WILL TRIGGER THE AUTOMATIC API CALL!
+      provider.updateFormData('nomination_form', nominationData);
+
+      print('🐛 DEBUG: Updated provider with nomination form data');
+      print(
+          '🐛 DEBUG: Current completion: ${provider.getCompletionPercentage().toStringAsFixed(1)}%');
+      print('🐛 DEBUG: ========================================');
+
+      // Show initial submission message and monitor API response
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    '🎉 All forms completed! Submitting employee data...',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.primary,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+
+        // Listen for provider status changes
+        _listenForAPIResponse(provider);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
       }
     }
+  }
+
+  void _listenForAPIResponse(EmployeeProvider provider) {
+    // Use a listener to track provider state changes
+    void statusListener() {
+      if (!mounted) return;
+
+      if (provider.status == EmployeeStatus.success) {
+        // API call succeeded
+        print('✅ DEBUG: API call successful! Navigating to home...');
+
+        // Show success message
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    '🎉 Employee created successfully!',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
+        // Navigate to home after short delay
+        Future.delayed(const Duration(seconds: 1), () {
+          if (mounted) {
+            context.goNamed('home');
+          }
+        });
+
+        // Remove listener
+        provider.removeListener(statusListener);
+      } else if (provider.status == EmployeeStatus.error) {
+        // API call failed
+        print('❌ DEBUG: API call failed with error: ${provider.errorMessage}');
+
+        // Show error message
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Failed to create employee: ${provider.errorMessage ?? 'Unknown error'}',
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 6),
+            action: SnackBarAction(
+              label: 'RETRY',
+              textColor: Colors.white,
+              onPressed: () {
+                // Clear the error and allow user to try again
+                provider.clearError();
+              },
+            ),
+          ),
+        );
+
+        // Remove listener
+        provider.removeListener(statusListener);
+      }
+    }
+
+    // Add listener and set a timeout
+    provider.addListener(statusListener);
+
+    // Timeout after 30 seconds if no response
+    Future.delayed(const Duration(seconds: 30), () {
+      if (mounted && provider.status == EmployeeStatus.loading) {
+        provider.removeListener(statusListener);
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.warning, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Request timeout. Please check your connection and try again.',
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.warning,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    });
   }
 
   @override
@@ -856,6 +1406,9 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
     }
     for (var member in familyMembers) {
       member.dispose();
+    }
+    for (var document in otherDocuments) {
+      document.dispose();
     }
     _witness1Controller.dispose();
     _witness2Controller.dispose();
@@ -1128,6 +1681,36 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
             ],
           ),
           const SizedBox(height: 16),
+          // Add API validation warning
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.red.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.warning,
+                  color: Colors.red,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Required: Both witness signatures must be uploaded for API submission',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.red[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           const Text(
             'Nomination signed/thumb impressed before me.',
             style: TextStyle(
@@ -1165,14 +1748,7 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Witness $witnessNumber - Name & Address',
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-            color: AppColors.gray700,
-          ),
-        ),
+        _buildLabelWithRedAsterisk('Witness $witnessNumber - Name & Address *'),
         const SizedBox(height: 8),
         LayoutBuilder(
           builder: (context, constraints) {
@@ -1228,54 +1804,35 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
                             border: Border.all(color: AppColors.gray300),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: signature != null
-                              ? Stack(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: Image.file(
-                                        signature,
-                                        width: double.infinity,
-                                        height: double.infinity,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                    Positioned(
-                                      top: 4,
-                                      right: 4,
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: AppColors.success,
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                        child: const Icon(
-                                          Icons.check,
-                                          color: Colors.white,
-                                          size: 16,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              : const Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.upload_file,
-                                      color: AppColors.gray500,
-                                      size: 24,
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      'Upload Signature',
-                                      style: TextStyle(
-                                        color: AppColors.gray500,
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                  ],
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade200,
+                                  borderRadius: BorderRadius.circular(4),
                                 ),
+                                child: const Text('Choose File',
+                                    style: TextStyle(fontSize: 12)),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  signature != null
+                                      ? signature.path.split('/').last
+                                      : 'No file chosen',
+                                  style: TextStyle(
+                                    color: signature != null
+                                        ? Colors.green
+                                        : Colors.grey.shade600,
+                                    fontSize: 12,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -1337,54 +1894,35 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
                               border: Border.all(color: AppColors.gray300),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: signature != null
-                                ? Stack(
-                                    children: [
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: Image.file(
-                                          signature,
-                                          width: double.infinity,
-                                          height: double.infinity,
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                      Positioned(
-                                        top: 4,
-                                        right: 4,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color: AppColors.success,
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                          ),
-                                          child: const Icon(
-                                            Icons.check,
-                                            color: Colors.white,
-                                            size: 16,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                : const Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.upload_file,
-                                        color: AppColors.gray500,
-                                        size: 20,
-                                      ),
-                                      SizedBox(height: 4),
-                                      Text(
-                                        'Upload',
-                                        style: TextStyle(
-                                          color: AppColors.gray500,
-                                          fontSize: 9,
-                                        ),
-                                      ),
-                                    ],
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade200,
+                                    borderRadius: BorderRadius.circular(4),
                                   ),
+                                  child: const Text('Choose File',
+                                      style: TextStyle(fontSize: 12)),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    signature != null
+                                        ? signature.path.split('/').last
+                                        : 'No file chosen',
+                                    style: TextStyle(
+                                      color: signature != null
+                                          ? Colors.green
+                                          : Colors.grey.shade600,
+                                      fontSize: 12,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -1420,6 +1958,19 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
         ),
       );
     }
+  }
+}
+
+class OtherDocumentData {
+  final TextEditingController nameController = TextEditingController();
+  File? file;
+
+  void dispose() {
+    nameController.dispose();
+  }
+
+  bool hasAnyData() {
+    return nameController.text.isNotEmpty || file != null;
   }
 }
 

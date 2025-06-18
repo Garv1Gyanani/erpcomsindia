@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/constants/app_colors.dart';
+import 'package:provider/provider.dart';
+import 'package:coms_india/core/constants/app_colors.dart';
+import '../controllers/employee_provider.dart';
 
 class EpfDeclarationForm extends StatefulWidget {
   const EpfDeclarationForm({super.key});
@@ -31,6 +33,11 @@ class _EpfDeclarationFormState extends State<EpfDeclarationForm> {
   final _passportToController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -45,7 +52,15 @@ class _EpfDeclarationFormState extends State<EpfDeclarationForm> {
         backgroundColor: AppColors.primary,
         elevation: 0,
         leading: IconButton(
-          onPressed: () => context.pop(),
+          onPressed: () {
+            // Check if there's something to pop, otherwise go to ESIC declaration
+            if (context.canPop()) {
+              context.pop(); // Go back to ESIC declaration
+            } else {
+              context
+                  .goNamed('esic_declaration'); // Fallback to ESIC declaration
+            }
+          },
           icon: const Icon(Icons.arrow_back, color: Colors.white),
         ),
       ),
@@ -585,7 +600,44 @@ class _EpfDeclarationFormState extends State<EpfDeclarationForm> {
   }
 
   void _submitForm() {
+    print('🐛 DEBUG: ===== EPF DECLARATION FORM SUBMISSION =====');
+    print('🐛 DEBUG: Earlier Provident Member: $_earlierProvidentMember');
+    print('🐛 DEBUG: Earlier Pension Member: $_earlierPensionMember');
+    print('🐛 DEBUG: UAN Number: ${_uanController.text}');
+    print('🐛 DEBUG: Previous PF Number: ${_previousPfController.text}');
+    print('🐛 DEBUG: Exit Date: ${_exitDateController.text}');
+    print('🐛 DEBUG: International Worker: $_isInternationalWorker');
+    print('🐛 DEBUG: Country: ${_countryController.text}');
+    print('🐛 DEBUG: Passport Number: ${_passportController.text}');
+
     if (_formKey.currentState!.validate()) {
+      // Update provider with EPF data
+      final provider = context.read<EmployeeProvider>();
+      final epfData = {
+        'pf_member': _earlierProvidentMember ? 'Yes' : 'No',
+        'pension_member': _earlierPensionMember ? 'Yes' : 'No',
+        'uan_number': _uanController.text,
+        'previous_pf_number': _previousPfController.text,
+        'exit_date': _exitDateController.text,
+        'scheme_certificate': _schemeCertificateController.text,
+        'ppo': _ppoController.text,
+        'international_worker': _isInternationalWorker ? 'Yes' : 'No',
+        'country_origin': _countryController.text,
+        'passport_number': _passportController.text,
+        'passport_valid_from': _passportFromController.text,
+        'passport_valid_to': _passportToController.text,
+      };
+
+      provider.updateFormData('epf_declaration', epfData);
+      print('🐛 DEBUG: Updated provider with EPF data');
+      print(
+          '🐛 DEBUG: Current completion: ${provider.getCompletionPercentage().toStringAsFixed(1)}%');
+
+      // Print complete summary to show single API integration
+      provider.printCompleteDebugSummary();
+
+      print('🐛 DEBUG: ============================================');
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Row(
@@ -604,8 +656,19 @@ class _EpfDeclarationFormState extends State<EpfDeclarationForm> {
         ),
       );
 
-      // Navigate back or to next screen
-      context.pop();
+      // Example: If all forms are completed, show ready for API call
+      if (provider.getCompletionPercentage() >= 100) {
+        print('🐛 DEBUG: 🎉 ALL FORMS COMPLETED! Calling single API...');
+        print('🐛 DEBUG: Call: provider.createEmployeeFromCollectedData()');
+        // Uncomment the line below to actually make the API call
+        // provider.createEmployeeFromCollectedData();
+      }
+
+      // Navigate to final screen (nomination form)
+      print('🐛 DEBUG: Navigating to Nomination Form...');
+      context.goNamed('nomination_form');
+    } else {
+      print('🐛 DEBUG: EPF form validation failed');
     }
   }
 

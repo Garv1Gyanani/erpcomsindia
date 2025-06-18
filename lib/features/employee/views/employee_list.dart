@@ -1,5 +1,5 @@
 import 'package:coms_india/core/services/storage_service.dart';
-import 'package:coms_india/features/employee/basic_info.dart';
+import 'package:coms_india/features/employee/views/basic_info.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;

@@ -1,11 +1,13 @@
-import 'package:coms_india/features/employee/add_contact.dart';
-import 'package:coms_india/features/employee/education_details.dart';
-import 'package:coms_india/features/employee/employee_list.dart';
-import 'package:coms_india/features/employee/employement_screen.dart';
-import 'package:coms_india/features/employee/esic_declaration_form.dart';
-import 'package:coms_india/features/employee/epf_declaration_form.dart';
-import 'package:coms_india/features/employee/govt_details.dart';
-import 'package:coms_india/features/employee/nomination_form.dart';
+import 'package:coms_india/features/employee/views/add_contact.dart';
+import 'package:coms_india/features/employee/views/education_details.dart';
+import 'package:coms_india/features/employee/views/employee_list.dart';
+import 'package:coms_india/features/employee/views/employement_screen.dart';
+import 'package:coms_india/features/employee/views/employment_details.dart';
+import 'package:coms_india/features/employee/views/esic_declaration_form.dart';
+import 'package:coms_india/features/employee/views/epf_declaration_form.dart';
+import 'package:coms_india/features/employee/views/govt_details.dart';
+import 'package:coms_india/features/employee/views/nomination_form.dart';
+import 'package:coms_india/features/employee/views/basic_info.dart';
 import 'package:coms_india/features/home/view/team_page.dart';
 import 'package:coms_india/features/task/view/task_page.dart';
 import 'package:coms_india/splash_screen.dart';
@@ -61,41 +63,49 @@ class AppRouter {
         builder: (context, state) => const EmployeeListPage(),
       ),
       GoRoute(
-        path: '/employeeDetails',
-        name: 'employeeDetails',
-        builder: (context, state) {
-          return EmploymentDetailsSection();
-        },
+        path: '/add-employee',
+        name: 'addEmployee',
+        builder: (context, state) => const AddEmployeePage(),
       ),
       GoRoute(
-        path: '/add-contact',
-        name: 'addContact',
+        path: '/employment-details',
+        name: 'employment_details',
+        builder: (context, state) => const EmploymentDetailsSection(),
+      ),
+      GoRoute(
+        path: '/previous-employment',
+        name: 'previous_employment',
+        builder: (context, state) => const EmploymentDetailsScreen(),
+      ),
+      GoRoute(
+        path: '/contact-details',
+        name: 'contact_details',
         builder: (context, state) => ContactFormScreen(),
       ),
       GoRoute(
         path: '/education-details',
-        name: 'educationDetails',
+        name: 'education_details',
         builder: (context, state) => EducationalDetailsSection(),
       ),
       GoRoute(
-        path: '/govt-details',
-        name: 'govtDetails',
+        path: '/govt-bank-details',
+        name: 'govt_bank_details',
         builder: (context, state) => GovernmentBankForm(),
       ),
       GoRoute(
-        path: '/nomination-form',
-        name: 'nominationForm',
-        builder: (context, state) => NominationFormScreen(),
-      ),
-      GoRoute(
-        path: '/esic-declaration-form',
-        name: 'esicDeclarationForm',
+        path: '/esic-declaration',
+        name: 'esic_declaration',
         builder: (context, state) => EsicDeclarationForm(),
       ),
       GoRoute(
-        path: '/epf-declaration-form',
-        name: 'epfDeclarationForm',
+        path: '/epf-declaration',
+        name: 'epf_declaration',
         builder: (context, state) => EpfDeclarationForm(),
+      ),
+      GoRoute(
+        path: '/nomination-form',
+        name: 'nomination_form',
+        builder: (context, state) => NominationFormScreen(),
       ),
     ],
     redirect: (BuildContext context, GoRouterState state) async {

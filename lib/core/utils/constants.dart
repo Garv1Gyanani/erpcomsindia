@@ -5,7 +5,10 @@ class ApiConstants {
   static const String logout = '/api/logout';
   static const String profile = '/api/profile';
   static const String taskStatus = '/api/status/task';
-
+  static const String createEmployee = '/api/employee/store';
+  static const String departments = '/api/departments';
+  static const String sites = '/api/sites';
+  static const String locations = '/api/locations';
 }
 
 class AppColors {

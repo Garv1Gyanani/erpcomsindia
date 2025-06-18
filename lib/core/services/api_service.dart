@@ -11,6 +11,8 @@ class ApiService {
     _initDio();
   }
 
+  Dio get dio => _dio;
+
   void _initDio() {
     _dio = Dio(
       BaseOptions(
@@ -162,6 +164,113 @@ class ApiService {
       return response;
     } catch (e) {
       print('API Task Status error: ${e.toString()}');
+      rethrow;
+    }
+  }
+
+  // Create employee with multipart form data
+  Future<Response> createEmployee(FormData formData) async {
+    try {
+      print(
+          '🌐 DEBUG: About to make API call to ${ApiConstants.createEmployee}');
+      print('🌐 DEBUG: FormData fields count: ${formData.fields.length}');
+      print('🌐 DEBUG: FormData files count: ${formData.files.length}');
+
+      final response = await _dio.post(
+        ApiConstants.createEmployee,
+        data: formData,
+        options: Options(
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+      );
+
+      print('🎉 DEBUG: API call completed successfully!');
+      print('🎉 DEBUG: Response status: ${response.statusCode}');
+      print('🎉 DEBUG: Response data: ${response.data}');
+      return response;
+    } catch (e) {
+      print('❌ DEBUG: API Create Employee error occurred');
+      print('❌ DEBUG: Error details: ${e.toString()}');
+      print('❌ DEBUG: Error type: ${e.runtimeType}');
+
+      if (e is DioException) {
+        print('❌ DEBUG: DioException occurred: ${e.message}');
+        print('❌ DEBUG: Response status: ${e.response?.statusCode}');
+        print('❌ DEBUG: Response data: ${e.response?.data}');
+
+        // Handle specific API validation errors
+        if (e.response?.statusCode == 422 && e.response?.data != null) {
+          final responseData = e.response!.data;
+          if (responseData is Map<String, dynamic> &&
+              responseData['message'] is Map) {
+            final validationErrors =
+                responseData['message'] as Map<String, dynamic>;
+            throw Exception('API Error: ${validationErrors.toString()}');
+          }
+        }
+      }
+      rethrow;
+    }
+  }
+
+  // Get departments list
+  Future<Response> getDepartments() async {
+    try {
+      print('🏢 DEBUG: Fetching departments...');
+      final response = await _dio.get(
+        ApiConstants.departments,
+        options: Options(
+          validateStatus: (status) {
+            return status! < 500; // Accept all status codes less than 500
+          },
+        ),
+      );
+      print('🏢 DEBUG: Departments response: ${response.data}');
+      return response;
+    } catch (e) {
+      print('❌ DEBUG: API Get Departments error: ${e.toString()}');
+      rethrow;
+    }
+  }
+
+  // Get sites list
+  Future<Response> getSites() async {
+    try {
+      print('🏗️ DEBUG: Fetching sites...');
+      final response = await _dio.get(
+        ApiConstants.sites,
+        options: Options(
+          validateStatus: (status) {
+            return status! < 500; // Accept all status codes less than 500
+          },
+        ),
+      );
+      print('🏗️ DEBUG: Sites response: ${response.data}');
+      return response;
+    } catch (e) {
+      print('❌ DEBUG: API Get Sites error: ${e.toString()}');
+      rethrow;
+    }
+  }
+
+  // Get locations list
+  Future<Response> getLocations() async {
+    try {
+      print('📍 DEBUG: Fetching locations...');
+      final response = await _dio.get(
+        ApiConstants.locations,
+        options: Options(
+          validateStatus: (status) {
+            return status! < 500; // Accept all status codes less than 500
+          },
+        ),
+      );
+      print('📍 DEBUG: Locations response: ${response.data}');
+      return response;
+    } catch (e) {
+      print('❌ DEBUG: API Get Locations error: ${e.toString()}');
       rethrow;
     }
   }

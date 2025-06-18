@@ -4,7 +4,6 @@ import '../../features/auth/models/user_model.dart';
 import 'dart:math' as Math;
 
 class StorageService {
-  // Keys for stored data
   static const String TOKEN_KEY = 'auth_token';
   static const String USER_KEY = 'user_data';
   static const String ROLES_KEY = 'user_roles';
@@ -13,7 +12,6 @@ class StorageService {
   static const String TOKEN_TYPE_KEY = 'token_type';
   static const String USER_ID_KEY = 'user_id';
 
-  // Get SharedPreferences instance with error handling
   Future<SharedPreferences?> _getPrefs() async {
     try {
       return await SharedPreferences.getInstance();
@@ -23,7 +21,6 @@ class StorageService {
     }
   }
 
-  // Add this method to your StorageService class
   Future<Map<String, dynamic>?> getLoginResponse() async {
     try {
       final prefs = await SharedPreferences.getInstance();

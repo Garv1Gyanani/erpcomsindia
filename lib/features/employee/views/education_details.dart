@@ -1,6 +1,8 @@
 import 'package:coms_india/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../controllers/employee_provider.dart';
 
 class EducationalDetailsSection extends StatefulWidget {
   @override
@@ -184,6 +186,50 @@ class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
     );
   }
 
+  void _submitEducationDetails() {
+    print('🐛 DEBUG: ===== EDUCATION DETAILS FORM SUBMISSION =====');
+    print('🐛 DEBUG: Education Entries: ${_educationEntries.length}');
+
+    try {
+      // ✅ Update provider with education details data
+      final provider = context.read<EmployeeProvider>();
+      final educationData = {
+        'education': _educationEntries
+            .map((entry) => {
+                  'degree': entry.degreeController.text,
+                  'university': entry.universityController.text,
+                  'specialization': entry.specializationController.text,
+                  'from_year': entry.fromYearController.text,
+                  'to_year': entry.toYearController.text,
+                  'percentage': entry.percentageController.text,
+                })
+            .toList(),
+      };
+
+      provider.updateFormData('education_details', educationData);
+      print('🐛 DEBUG: Updated provider with education details');
+      print(
+          '🐛 DEBUG: Current completion: ${provider.getCompletionPercentage().toStringAsFixed(1)}%');
+      print('🐛 DEBUG: ========================================');
+
+      // ✅ Navigate to next screen
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text(
+                  'Education details saved! Continue to government & bank details.')),
+        );
+        context.goNamed('govt_bank_details');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -191,7 +237,14 @@ class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            // Check if there's something to pop, otherwise go to contact details
+            if (context.canPop()) {
+              context.pop(); // Go back to contact details
+            } else {
+              context.goNamed('contact_details'); // Fallback to contact details
+            }
+          },
         ),
         title: const Text(
           'Educational Details',
@@ -318,11 +371,9 @@ class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    context.goNamed("govtDetails");
-                  },
-                  child: const Text('Next',
-                      style: TextStyle(color: Colors.white)),
+                  onPressed: _submitEducationDetails,
+                  child:
+                      const Text('Next', style: TextStyle(color: Colors.white)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     padding: const EdgeInsets.symmetric(vertical: 14),
