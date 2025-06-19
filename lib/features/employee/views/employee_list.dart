@@ -1,5 +1,6 @@
 import 'package:coms_india/core/services/storage_service.dart';
 import 'package:coms_india/features/employee/views/basic_info.dart';
+import 'package:coms_india/features/employee/views/employee_details.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
@@ -31,7 +32,6 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
         _errorMessage = null;
       });
 
-      // Get token from storage
       final token = await _storageService.getToken();
       print('🔍 Retrieved token: ${token?.substring(0, 20)}...');
 
@@ -180,8 +180,8 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
         leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => context.goNamed("home")),
-        title:
-            const Text('Employee List', style: TextStyle(color: Colors.white)),
+        title: const Text('Employee List',
+            style: TextStyle(color: Colors.white, fontSize: 18)),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
@@ -343,13 +343,37 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
               ),
               onTap: () {
                 // Navigate to employee details page
-                _showEmployeeDetails(emp);
+                _navigateToEmployeeDetails(emp);
               },
             ),
           );
         },
       ),
     );
+  }
+
+  void _navigateToEmployeeDetails(Map<String, dynamic> employee) {
+    final userId = employee['user_id'];
+    final employeeName = employee['name'] ?? 'Unknown Employee';
+
+    if (userId != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EmployeeDetailsPage(
+            userId: userId,
+            employeeName: employeeName,
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('User ID not found for this employee'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _showEmployeeDetails(Map<String, dynamic> employee) {

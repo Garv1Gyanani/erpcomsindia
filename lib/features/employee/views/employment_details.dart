@@ -1,32 +1,9 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../controllers/employee_provider.dart';
 import '../../../core/utils/validation_utils.dart';
-
-class PreviousEmploymentData {
-  final TextEditingController companyNameController = TextEditingController();
-  final TextEditingController designationController = TextEditingController();
-  final TextEditingController reasonController = TextEditingController();
-  DateTime? fromDate;
-  DateTime? toDate;
-
-  void dispose() {
-    companyNameController.dispose();
-    designationController.dispose();
-    reasonController.dispose();
-  }
-
-  bool hasAnyData() {
-    return companyNameController.text.isNotEmpty ||
-        designationController.text.isNotEmpty ||
-        reasonController.text.isNotEmpty ||
-        fromDate != null ||
-        toDate != null;
-  }
-}
 
 class EmploymentDetailsScreen extends StatefulWidget {
   const EmploymentDetailsScreen({super.key});
@@ -44,6 +21,14 @@ class _EmploymentDetailsScreenState extends State<EmploymentDetailsScreen> {
   @override
   void initState() {
     super.initState();
+    // Pre-populate with sample data for testing
+    previousEmployments[0].companyNameController.text = "ABC Pvt Ltd";
+    previousEmployments[0].designationController.text = "Software Engineer";
+    previousEmployments[0].fromDate = DateTime(2020, 1, 1);
+    previousEmployments[0].toDate = DateTime(2022, 1, 1);
+    previousEmployments[0].reasonController.text = "Better Opportunity";
+
+    print('🚀 DEBUG: Previous Employment Details - Sample data pre-populated');
   }
 
   @override
@@ -160,7 +145,12 @@ class _EmploymentDetailsScreenState extends State<EmploymentDetailsScreen> {
               const SizedBox(height: 20),
               _buildPreviousEmploymentSection(),
               const SizedBox(height: 32),
-              _buildSubmitButton(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  _buildSubmitButton(),
+                ],
+              ),
             ],
           ),
         ),
@@ -196,58 +186,44 @@ class _EmploymentDetailsScreenState extends State<EmploymentDetailsScreen> {
   }
 
   Widget _buildPreviousEmploymentSection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Previous Employment Details',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Previous Employment Details',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            ElevatedButton(
+              onPressed: _addPreviousEmployment,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              ElevatedButton(
-                onPressed: _addPreviousEmployment,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text(
-                  '+ Add Employment',
-                  style: TextStyle(color: Colors.white, fontSize: 12),
-                ),
+              child: const Text(
+                '+ Add Employment',
+                style: TextStyle(color: Colors.white, fontSize: 10),
               ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          ...previousEmployments.asMap().entries.map((entry) {
-            int index = entry.key;
-            PreviousEmploymentData employment = entry.value;
-            return _buildPreviousEmploymentCard(employment, index);
-          }).toList(),
-        ],
-      ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        ...previousEmployments.asMap().entries.map((entry) {
+          int index = entry.key;
+          PreviousEmploymentData employment = entry.value;
+          return _buildPreviousEmploymentCard(employment, index);
+        }).toList(),
+      ],
     );
   }
 
@@ -264,45 +240,37 @@ class _EmploymentDetailsScreenState extends State<EmploymentDetailsScreen> {
       child: Column(
         children: [
           // Company Name and Designation Row
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Company Name',
-                        style: TextStyle(fontWeight: FontWeight.w500)),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: employment.companyNameController,
-                      decoration: _getInputDecoration('ABC Pvt Ltd'),
-                      validator: ValidationUtils.validateCompanyName,
-                    ),
-                  ],
-                ),
+              const Text('Company Name',
+                  style: TextStyle(fontWeight: FontWeight.w500)),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: employment.companyNameController,
+                decoration: _getInputDecoration('ABC Pvt Ltd'),
+                validator: ValidationUtils.validateCompanyName,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Designation',
-                        style: TextStyle(fontWeight: FontWeight.w500)),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: employment.designationController,
-                      decoration: _getInputDecoration('Software Engineer'),
-                    ),
-                  ],
-                ),
-              ),
-              if (previousEmployments.length > 1)
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.red),
-                  onPressed: () => _removePreviousEmployment(index),
-                ),
             ],
           ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Designation',
+                  style: TextStyle(fontWeight: FontWeight.w500)),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: employment.designationController,
+                decoration: _getInputDecoration('Software Engineer'),
+              ),
+            ],
+          ),
+          if (previousEmployments.length > 1)
+            IconButton(
+              icon: const Icon(Icons.close, color: Colors.red),
+              onPressed: () => _removePreviousEmployment(index),
+            ),
           const SizedBox(height: 16),
           // Date Row
           Row(
@@ -412,24 +380,22 @@ class _EmploymentDetailsScreenState extends State<EmploymentDetailsScreen> {
   }
 
   Widget _buildSubmitButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: _submitForm,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+    return ElevatedButton(
+      onPressed: _submitForm,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: const Text(
-          'Continue to Contact Details',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+      ),
+      child: const Text(
+        'Continue to Contact Details',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
@@ -438,18 +404,40 @@ class _EmploymentDetailsScreenState extends State<EmploymentDetailsScreen> {
   InputDecoration _getInputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(color: Colors.grey.shade500),
+      hintStyle: TextStyle(color: Colors.grey, fontSize: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: Colors.black.withOpacity(0.1)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       filled: true,
       fillColor: Colors.white,
     );
+  }
+}
+
+class PreviousEmploymentData {
+  final TextEditingController companyNameController = TextEditingController();
+  final TextEditingController designationController = TextEditingController();
+  final TextEditingController reasonController = TextEditingController();
+  DateTime? fromDate;
+  DateTime? toDate;
+
+  void dispose() {
+    companyNameController.dispose();
+    designationController.dispose();
+    reasonController.dispose();
+  }
+
+  bool hasAnyData() {
+    return companyNameController.text.isNotEmpty ||
+        designationController.text.isNotEmpty ||
+        reasonController.text.isNotEmpty ||
+        fromDate != null ||
+        toDate != null;
   }
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../controllers/employee_provider.dart';
-import '../models/employee_model.dart';
 import '../../../core/utils/validation_utils.dart';
 
 class FamilyMemberUI {
@@ -57,16 +56,6 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
     if (picked != null) onDatePicked(picked);
   }
 
-  // Validation method for date comparison
-  String? _validateDates() {
-    if (_dob != null && _doj != null) {
-      if (_dob!.isAfter(_doj!)) {
-        return 'Date of Birth cannot be after Date of Joining';
-      }
-    }
-    return null;
-  }
-
   void _addFamilyMember() {
     setState(() {
       familyMembers.add(FamilyMemberUI());
@@ -101,18 +90,6 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
     print('🐛 DEBUG: Family Members: ${familyMembers.length}');
 
     if (_formKey.currentState!.validate()) {
-      // Additional date validation
-      final dateError = _validateDates();
-      if (dateError != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(dateError),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
       try {
         // ✅ ONLY update provider with basic info data - no API call here
         final provider = context.read<EmployeeProvider>();
@@ -200,12 +177,32 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
   @override
   void initState() {
     super.initState();
+    print('🚀 DEBUG: ===== BASIC INFO PAGE INITIALIZED =====');
+    print('🚀 DEBUG: Initial family members count: ${familyMembers.length}');
+
+    // Pre-populate fields with sample data for easy testing
+    _nameController.text = "Utkarsh1";
+    _selectedGender = "Male";
+    _selectedStatus = "Married";
+    _selectedBloodGroup = "A+";
+    _selectedReligion = "Hindu";
+    _dob = DateTime(1990, 1, 1);
+    _doj = DateTime(2025, 6, 10);
+
+    // Pre-populate first family member
+    familyMembers[0].nameController.text = "Jane Doe";
+    familyMembers[0].relationController.text = "Wife";
+    familyMembers[0].occupationController.text = "Teacher";
+    familyMembers[0].dateOfBirth = DateTime(1992, 1, 1);
 
     _nameController.addListener(_debugPrintBasicInfo);
     // Add listeners for all family member fields
     for (var i = 0; i < familyMembers.length; i++) {
       _addFamilyMemberListeners(i);
     }
+    print('🚀 DEBUG: Listeners attached for all fields');
+    print('🚀 DEBUG: Sample data pre-populated for easy testing');
+    print('🚀 DEBUG: ===================================');
   }
 
   void _addFamilyMemberListeners(int index) {
@@ -243,8 +240,8 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
           },
         ),
         backgroundColor: Colors.red,
-        title:
-            const Text('Add Employee', style: TextStyle(color: Colors.white)),
+        title: const Text('Add Employee',
+            style: TextStyle(color: Colors.white, fontSize: 18)),
       ),
       body: Consumer<EmployeeProvider>(
         builder: (context, provider, child) {
@@ -296,30 +293,10 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                       _buildDatePicker('Date of Birth *', _dob, (date) {
                         setState(() => _dob = date);
                         _debugPrintBasicInfo();
-                        // Check if DOB is after DOJ
-                        if (_doj != null && date.isAfter(_doj!)) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                  'Please ensure Date of Birth is before Date of Joining'),
-                              backgroundColor: Colors.orange,
-                            ),
-                          );
-                        }
                       }),
                       _buildDatePicker('Date of Joining *', _doj, (date) {
                         setState(() => _doj = date);
                         _debugPrintBasicInfo();
-                        // Check if DOJ is before DOB
-                        if (_dob != null && _dob!.isAfter(date)) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                  'Please ensure Date of Joining is after Date of Birth'),
-                              backgroundColor: Colors.orange,
-                            ),
-                          );
-                        }
                       }),
                     ]),
                     rowWrap([
@@ -336,99 +313,71 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                       }),
                     ]),
                     const SizedBox(height: 20),
-                    Center(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 40, vertical: 14),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onPressed: () {
-                          print(
-                              '🎯 DEBUG: "Next" button clicked - validating form...');
-
-                          // Check date validation first
-                          final dateError = _validateDates();
-                          if (dateError != null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(dateError),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
-
-                          if (_formKey.currentState!.validate()) {
-                            print('✅ DEBUG: Form validation passed!');
-
-                            // Debug print basic info when moving to next step
-                            print(
-                                '🔄 DEBUG: ===== BASIC INFO STEP COMPLETED =====');
-                            print(
-                                '🔄 DEBUG: Employee Name: "${_nameController.text}"');
-                            print('🔄 DEBUG: Gender: $_selectedGender');
-                            print('🔄 DEBUG: DOB: $_dob');
-                            print('🔄 DEBUG: DOJ: $_doj');
-                            print('🔄 DEBUG: Marital Status: $_selectedStatus');
-                            print(
-                                '🔄 DEBUG: Blood Group: $_selectedBloodGroup');
-                            print('🔄 DEBUG: Religion: $_selectedReligion');
-                            print(
-                                '🔄 DEBUG: Family Members Count: ${familyMembers.length}');
-
-                            // Debug print family members details
-                            for (int i = 0; i < familyMembers.length; i++) {
-                              final member = familyMembers[i];
-                              print('🔄 DEBUG: Family Member ${i + 1}:');
-                              print('  Name: "${member.nameController.text}"');
-                              print(
-                                  '  Relation: "${member.relationController.text}"');
-                              print(
-                                  '  Occupation: "${member.occupationController.text}"');
-                              print('  DOB: ${member.dateOfBirth}');
-                            }
-                            print(
-                                '🔄 DEBUG: Moving to Family Information Step...');
-                            print('🔄 DEBUG: ================================');
-
-                            setState(() => currentStep = 1);
-                          } else {
-                            print(
-                                '❌ DEBUG: Form validation failed! Please check required fields');
-                          }
-                        },
-                        child: const Text('Next',
-                            style:
-                                TextStyle(fontSize: 14, color: Colors.white)),
-                      ),
-                    ),
-                  ] else if (currentStep == 1) ...[
-                    // Updated Family Information Section
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        sectionTitle('Family Information'),
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
+                            backgroundColor: Colors.red,
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
+                                horizontal: 40, vertical: 14),
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8)),
+                                borderRadius: BorderRadius.circular(12)),
                           ),
                           onPressed: () {
-                            _addFamilyMember();
-                            // Attach listeners for the new member
-                            _addFamilyMemberListeners(familyMembers.length - 1);
+                            print(
+                                '🎯 DEBUG: "Next" button clicked - validating form...');
+                            if (_formKey.currentState!.validate()) {
+                              print('✅ DEBUG: Form validation passed!');
+
+                              // Debug print basic info when moving to next step
+                              print(
+                                  '🔄 DEBUG: ===== BASIC INFO STEP COMPLETED =====');
+                              print(
+                                  '🔄 DEBUG: Employee Name: "${_nameController.text}"');
+                              print('🔄 DEBUG: Gender: $_selectedGender');
+                              print('🔄 DEBUG: DOB: $_dob');
+                              print('🔄 DEBUG: DOJ: $_doj');
+                              print(
+                                  '🔄 DEBUG: Marital Status: $_selectedStatus');
+                              print(
+                                  '🔄 DEBUG: Blood Group: $_selectedBloodGroup');
+                              print('🔄 DEBUG: Religion: $_selectedReligion');
+                              print(
+                                  '🔄 DEBUG: Family Members Count: ${familyMembers.length}');
+
+                              // Debug print family members details
+                              for (int i = 0; i < familyMembers.length; i++) {
+                                final member = familyMembers[i];
+                                print('🔄 DEBUG: Family Member ${i + 1}:');
+                                print(
+                                    '  Name: "${member.nameController.text}"');
+                                print(
+                                    '  Relation: "${member.relationController.text}"');
+                                print(
+                                    '  Occupation: "${member.occupationController.text}"');
+                                print('  DOB: ${member.dateOfBirth}');
+                              }
+                              print(
+                                  '🔄 DEBUG: Moving to Family Information Step...');
+                              print(
+                                  '🔄 DEBUG: ================================');
+
+                              setState(() => currentStep = 1);
+                            } else {
+                              print(
+                                  '❌ DEBUG: Form validation failed! Please check required fields');
+                            }
                           },
-                          child: const Text('Add More',
-                              style: TextStyle(color: Colors.white)),
+                          child: const Text('Next',
+                              style:
+                                  TextStyle(fontSize: 16, color: Colors.white)),
                         ),
                       ],
                     ),
+                  ] else if (currentStep == 1) ...[
+                    // Updated Family Information Section
+                    sectionTitle('Family Information'),
                     const SizedBox(height: 16),
 
                     // Dynamic Family Members List
@@ -614,21 +563,54 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                       );
                     }).toList(),
 
-                    const SizedBox(height: 20),
+                    // Add More button positioned after all family members
+                    const SizedBox(height: 16),
                     Center(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
+                          backgroundColor: Colors.blue,
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 40, vertical: 14),
+                              horizontal: 24, vertical: 12),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                              borderRadius: BorderRadius.circular(8)),
                         ),
-                        onPressed: _submitForm,
-                        child: const Text('Submit',
-                            style:
-                                TextStyle(fontSize: 14, color: Colors.white)),
+                        onPressed: () {
+                          _addFamilyMember();
+                          // Attach listeners for the new member
+                          _addFamilyMemberListeners(familyMembers.length - 1);
+                        },
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.add, color: Colors.white, size: 20),
+                            SizedBox(width: 8),
+                            Text('Add More Family Member',
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 16)),
+                          ],
+                        ),
                       ),
+                    ),
+
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            elevation: 0,
+                            backgroundColor: Colors.red,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 40, vertical: 14),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: _submitForm,
+                          child: const Text('Next',
+                              style:
+                                  TextStyle(fontSize: 16, color: Colors.white)),
+                        ),
+                      ],
                     ),
                   ]
                 ],
@@ -685,7 +667,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
       return RichText(
         text: TextSpan(
           style: const TextStyle(
-            fontSize: 14,
+            fontSize: 16,
             fontWeight: FontWeight.w500,
             color: Colors.black87,
           ),
@@ -705,7 +687,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
     return Text(
       label,
       style: const TextStyle(
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: FontWeight.w500,
         color: Colors.black87,
       ),
@@ -755,7 +737,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
             selectedDate != null
                 ? '${selectedDate.day}-${selectedDate.month}-${selectedDate.year}'
                 : 'dd-mm-yyyy',
-            style: const TextStyle(fontSize: 14),
+            style: const TextStyle(fontSize: 16),
           ),
         ),
       ),
@@ -776,7 +758,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 14.0),
       child: Text(title,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
     );
   }
 }

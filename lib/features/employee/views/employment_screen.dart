@@ -1,84 +1,10 @@
 import 'package:coms_india/core/utils/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart' show DateFormat;
 import 'package:provider/provider.dart';
 import '../controllers/employee_provider.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/services/api_service.dart';
-
-class DepartmentData {
-  final int id;
-  final String name;
-  final List<DesignationData> designations;
-
-  DepartmentData({
-    required this.id,
-    required this.name,
-    required this.designations,
-  });
-
-  factory DepartmentData.fromJson(Map<String, dynamic> json) {
-    return DepartmentData(
-      id: json['id'],
-      name: json['department_name'],
-      designations: (json['designations'] as List)
-          .map((e) => DesignationData.fromJson(e))
-          .toList(),
-    );
-  }
-}
-
-class DesignationData {
-  final int id;
-  final String name;
-  final int hierarchyLevel;
-  final int departmentId;
-
-  DesignationData({
-    required this.id,
-    required this.name,
-    required this.hierarchyLevel,
-    required this.departmentId,
-  });
-
-  factory DesignationData.fromJson(Map<String, dynamic> json) {
-    return DesignationData(
-      id: json['id'],
-      name: json['designation_name'],
-      hierarchyLevel: json['hierarchy_level'],
-      departmentId: json['department_id'],
-    );
-  }
-}
-
-class SiteData {
-  final int id;
-  final String name;
-
-  SiteData({required this.id, required this.name});
-
-  factory SiteData.fromJson(Map<String, dynamic> json) {
-    return SiteData(
-      id: json['id'],
-      name: json['site_name'],
-    );
-  }
-}
-
-class LocationData {
-  final int id;
-  final String name;
-
-  LocationData({required this.id, required this.name});
-
-  factory LocationData.fromJson(Map<String, dynamic> json) {
-    return LocationData(
-      id: json['id'],
-      name: json['location_name'],
-    );
-  }
-}
 
 class EmploymentDetailsSection extends StatefulWidget {
   const EmploymentDetailsSection({super.key});
@@ -114,18 +40,15 @@ class _EmploymentDetailsSectionState extends State<EmploymentDetailsSection> {
   bool _isLoadingLocations = true;
 
   final List<String> _modeOfJoiningOptions = const [
-    'direct',
-    'reference',
-    'campus',
-    'online',
-    'interview'
+    'Walk-in',
+    'Referral',
+    'Interview',
   ];
 
   @override
   void initState() {
     super.initState();
     _loadApiData();
-    _punchingCodeController.text = "1234"; // Sample data
   }
 
   Future<void> _loadApiData() async {
@@ -136,25 +59,6 @@ class _EmploymentDetailsSectionState extends State<EmploymentDetailsSection> {
         _loadSites(),
         _loadLocations(),
       ]);
-
-      // Pre-select first options for testing
-      if (_departments.isNotEmpty) {
-        _selectedDepartment = _departments.first;
-        _availableDesignations = _selectedDepartment!.designations;
-        if (_availableDesignations.isNotEmpty) {
-          _selectedDesignation = _availableDesignations.first;
-        }
-      }
-
-      if (_sites.isNotEmpty) {
-        _selectedSite = _sites.first;
-      }
-
-      if (_locations.isNotEmpty) {
-        _selectedLocation = _locations.first;
-      }
-
-      _selectedModeOfJoining = 'interview';
 
       print('🚀 DEBUG: API data loaded successfully');
       print('🚀 DEBUG: Departments: ${_departments.length}');
@@ -386,7 +290,9 @@ class _EmploymentDetailsSectionState extends State<EmploymentDetailsSection> {
         title: const Text(
           'Employment Details',
           style: TextStyle(
-              color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600),
+            color: Colors.white,
+            fontSize: 18,
+          ),
         ),
         backgroundColor: const Color(AppColors.primary),
       ),
@@ -597,6 +503,79 @@ class _EmploymentDetailsSectionState extends State<EmploymentDetailsSection> {
               : null,
         ),
       ],
+    );
+  }
+}
+
+class DepartmentData {
+  final int id;
+  final String name;
+  final List<DesignationData> designations;
+
+  DepartmentData({
+    required this.id,
+    required this.name,
+    required this.designations,
+  });
+
+  factory DepartmentData.fromJson(Map<String, dynamic> json) {
+    return DepartmentData(
+      id: json['id'],
+      name: json['department_name'],
+      designations: (json['designations'] as List)
+          .map((e) => DesignationData.fromJson(e))
+          .toList(),
+    );
+  }
+}
+
+class DesignationData {
+  final int id;
+  final String name;
+  final int hierarchyLevel;
+  final int departmentId;
+
+  DesignationData({
+    required this.id,
+    required this.name,
+    required this.hierarchyLevel,
+    required this.departmentId,
+  });
+
+  factory DesignationData.fromJson(Map<String, dynamic> json) {
+    return DesignationData(
+      id: json['id'],
+      name: json['designation_name'],
+      hierarchyLevel: json['hierarchy_level'],
+      departmentId: json['department_id'],
+    );
+  }
+}
+
+class SiteData {
+  final int id;
+  final String name;
+
+  SiteData({required this.id, required this.name});
+
+  factory SiteData.fromJson(Map<String, dynamic> json) {
+    return SiteData(
+      id: json['id'],
+      name: json['site_name'],
+    );
+  }
+}
+
+class LocationData {
+  final int id;
+  final String name;
+
+  LocationData({required this.id, required this.name});
+
+  factory LocationData.fromJson(Map<String, dynamic> json) {
+    return LocationData(
+      id: json['id'],
+      name: json['location_name'],
     );
   }
 }

@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:coms_india/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../controllers/employee_provider.dart';
@@ -14,7 +14,6 @@ class GovernmentBankForm extends StatefulWidget {
 
 class _GovernmentBankFormState extends State<GovernmentBankForm> {
   final _formKey = GlobalKey<FormState>();
-  final ImagePicker _picker = ImagePicker();
 
   Widget _buildLabelWithAsterisk(String label) {
     List<String> parts = label.split(' *');
@@ -71,12 +70,21 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
   // Verification checkboxes
   bool _ifscVerified = false;
   bool _bankAccountVerified = false;
-  bool _softCopyJoiningKitReceived = false;
-  bool _hardCopyJoiningKitReceived = false;
 
   @override
   void initState() {
     super.initState();
+    // Pre-populate fields with sample data for easy testing
+    _aadharController.text = "123456789012";
+    _panController.text = "ABCDE1234F";
+    _uanController.text = "UAN12345678";
+    _pfController.text = "PF987654321";
+    _esicController.text = "ESI12345";
+    _bankNameController.text = "HDFC Bank";
+    _accountController.text = "1234567890";
+    _ifscController.text = "HDFC0001234";
+    _remarksController.text = "This is a sample remark.";
+    print('🚀 DEBUG: Government & Bank Details - Sample data pre-populated');
   }
 
   @override
@@ -90,17 +98,16 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
             if (context.canPop()) {
               context.pop(); // Go back to education details
             } else {
-              context.goNamed(
-                  'education_details'); // Fallback to education details
+              context.goNamed('education_details');
             }
           },
         ),
         title: const Text(
           'ID & Bank Details Form',
           style: TextStyle(
-              color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
+              color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18),
         ),
-        backgroundColor: Colors.red,
+        backgroundColor: AppColors.primary,
         elevation: 0,
       ),
       backgroundColor: Colors.white,
@@ -174,7 +181,6 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
       child: Column(
         children: [
           _buildTextFormField(
-            fieldNumber: 1,
             controller: _aadharController,
             label: 'Aadhar Number *',
             hint: 'Enter Aadhar Number (12 digits)',
@@ -193,7 +199,6 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
           ),
           const SizedBox(height: 12),
           _buildTextFormField(
-            fieldNumber: 2,
             controller: _panController,
             label: 'PAN Number *',
             hint: 'Enter PAN Number (10 characters)',
@@ -212,7 +217,6 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
           ),
           const SizedBox(height: 16),
           _buildTextFormField(
-            fieldNumber: 3,
             controller: _uanController,
             label: 'UAN Number',
             hint: 'Enter UAN Number (12 digits)',
@@ -222,7 +226,6 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
           ),
           const SizedBox(height: 16),
           _buildTextFormField(
-            fieldNumber: 4,
             controller: _pfController,
             label: 'PF Member ID',
             hint: 'Enter PF Member ID',
@@ -230,7 +233,6 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
           ),
           const SizedBox(height: 12),
           _buildTextFormField(
-            fieldNumber: 5,
             controller: _esicController,
             label: 'ESIC Number',
             hint: 'Enter ESIC Number',
@@ -242,29 +244,29 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
             children: [
               Expanded(
                 child: _buildFileUploadButton(
-                  'Aadhar Card Front (6)',
+                  'Aadhar Card Front *',
                   _aadharFrontImage,
-                  () => _pickImage('aadhar_front'),
-                  sample: 'Sample: Upload clear image of front side',
+                  () => _pickFile('aadhar_front'),
+                  sample: 'Sample: Upload clear document of front side',
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildFileUploadButton(
-                  'Aadhar Card Back (7)',
+                  'Aadhar Card Back *',
                   _aadharBackImage,
-                  () => _pickImage('aadhar_back'),
-                  sample: 'Sample: Upload clear image of back side',
+                  () => _pickFile('aadhar_back'),
+                  sample: 'Sample: Upload clear document of back side',
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           _buildFileUploadButton(
-            'PAN Card Upload (8)',
+            'PAN Card Upload *',
             _panCardImage,
-            () => _pickImage('pan_card'),
-            sample: 'Sample: Upload clear image of PAN card',
+            () => _pickFile('pan_card'),
+            sample: 'Sample: Upload clear document of PAN card',
           ),
         ],
       ),
@@ -288,7 +290,6 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
       child: Column(
         children: [
           _buildTextFormField(
-            fieldNumber: 9,
             controller: _bankNameController,
             label: 'Bank Name *',
             hint: 'Enter Bank Name',
@@ -297,7 +298,6 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
           ),
           const SizedBox(height: 12),
           _buildTextFormField(
-            fieldNumber: 10,
             controller: _accountController,
             label: 'Account Number *',
             hint: 'Enter Account Number',
@@ -312,7 +312,6 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
           ),
           const SizedBox(height: 16),
           _buildTextFormField(
-            fieldNumber: 11,
             controller: _ifscController,
             label: 'IFSC Code *',
             hint: 'Enter IFSC Code (11 characters)',
@@ -331,10 +330,10 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
           ),
           const SizedBox(height: 12),
           _buildFileUploadButton(
-            'Bank Passbook / Cheque Book (12)',
+            'Bank Passbook / Cheque Book *',
             _bankPassbookImage,
-            () => _pickImage('bank_passbook'),
-            sample: 'Sample: Upload clear image of passbook/cheque',
+            () => _pickFile('bank_passbook'),
+            sample: 'Sample: Upload clear document of passbook/cheque',
           ),
           const SizedBox(height: 16),
           Row(
@@ -342,7 +341,7 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
               Expanded(
                 child: CheckboxListTile(
                   title: const Text(
-                    'IFSC Code Verified (13)',
+                    'IFSC Code Verified',
                     style: TextStyle(fontSize: 14),
                   ),
                   value: _ifscVerified,
@@ -358,7 +357,7 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
               Expanded(
                 child: CheckboxListTile(
                   title: const Text(
-                    'Bank Account Verified (14)',
+                    'Bank Account Verified',
                     style: TextStyle(fontSize: 14),
                   ),
                   value: _bankAccountVerified,
@@ -400,18 +399,18 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
             children: [
               Expanded(
                 child: _buildFileUploadButton(
-                  'Employee Photo (15)',
+                  'Employee Photo *',
                   _employeePhotoImage,
-                  () => _pickImage('employee_photo'),
+                  () => _pickFile('employee_photo'),
                   sample: 'Sample: Upload recent passport size photo',
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _buildFileUploadButton(
-                  'Employee Signature or Thumb Mark (16)',
+                  'Employee Signature or Thumb Mark *',
                   _employeeSignatureImage,
-                  () => _pickImage('employee_signature'),
+                  () => _pickFile('employee_signature'),
                   sample: 'Sample: Upload clear signature or thumb mark',
                 ),
               ),
@@ -419,50 +418,8 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
           ),
           const SizedBox(height: 20),
 
-          // Joining Kit Checkboxes Row
-          Row(
-            children: [
-              Expanded(
-                child: CheckboxListTile(
-                  title: const Text(
-                    'Soft Copy Joining Kit Received (17)',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                  value: _softCopyJoiningKitReceived,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      _softCopyJoiningKitReceived = value ?? false;
-                    });
-                  },
-                  activeColor: Colors.red[700],
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-            ],
-          ),
-
-          CheckboxListTile(
-            title: const Text(
-              'Hard Copy Joining Kit Received (18)',
-              style: TextStyle(fontSize: 14),
-            ),
-            value: _hardCopyJoiningKitReceived,
-            onChanged: (bool? value) {
-              setState(() {
-                _hardCopyJoiningKitReceived = value ?? false;
-              });
-            },
-            activeColor: Colors.red[700],
-            dense: true,
-            contentPadding: EdgeInsets.zero,
-          ),
-
-          const SizedBox(height: 16),
-
           // Remarks Text Field
           _buildTextAreaField(
-            fieldNumber: 19,
             controller: _remarksController,
             label: 'Remarks',
             hint: 'Enter any additional remarks or notes...',
@@ -475,7 +432,6 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
   }
 
   Widget _buildTextFormField({
-    required int fieldNumber,
     required TextEditingController controller,
     required String label,
     required String hint,
@@ -488,19 +444,7 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            _buildLabelWithAsterisk(label),
-            Text(
-              '  ($fieldNumber)',
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
+        _buildLabelWithAsterisk(label),
         if (sample != null)
           Padding(
             padding: const EdgeInsets.only(top: 2, bottom: 2),
@@ -547,7 +491,6 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
   }
 
   Widget _buildTextAreaField({
-    required int fieldNumber,
     required TextEditingController controller,
     required String label,
     required String hint,
@@ -559,7 +502,7 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '$label  ($fieldNumber)',
+          label,
           style: const TextStyle(
             fontWeight: FontWeight.w600,
             color: Colors.black,
@@ -614,14 +557,7 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-            fontSize: 14,
-          ),
-        ),
+        _buildLabelWithAsterisk(label),
         if (sample != null)
           Padding(
             padding: const EdgeInsets.only(top: 2, bottom: 2),
@@ -655,7 +591,9 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    file != null ? 'File Selected' : 'Choose File',
+                    file != null
+                        ? 'File Selected'
+                        : 'Choose File (PDF, Images, Docs)',
                     style: TextStyle(
                       color: file != null ? Colors.green : Colors.grey[600],
                       fontSize: 14,
@@ -673,64 +611,74 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
   Widget _buildSubmitButton() {
     return Row(mainAxisAlignment: MainAxisAlignment.end, children: [
       ElevatedButton(
-        onPressed: _submitForm,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
           elevation: 0,
-        ),
-        child: const Text(
-          'Next',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
+          backgroundColor: AppColors.primary,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 12,
           ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        onPressed: _submitForm,
+        child: const Text(
+          'Continue to ESIC Declaration',
+          style: TextStyle(
+              color: Colors.white, fontSize: 16, fontWeight: FontWeight.w400),
         ),
       ),
     ]);
   }
 
-  Future<void> _pickImage(String imageType) async {
+  Future<void> _pickFile(String fileType) async {
     try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1800,
-        maxHeight: 1800,
-        imageQuality: 85,
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
+        allowMultiple: false,
       );
 
-      if (image != null) {
+      if (result != null && result.files.single.path != null) {
         setState(() {
-          switch (imageType) {
+          switch (fileType) {
             case 'aadhar_front':
-              _aadharFrontImage = File(image.path);
+              _aadharFrontImage = File(result.files.single.path!);
               break;
             case 'aadhar_back':
-              _aadharBackImage = File(image.path);
+              _aadharBackImage = File(result.files.single.path!);
               break;
             case 'pan_card':
-              _panCardImage = File(image.path);
+              _panCardImage = File(result.files.single.path!);
               break;
             case 'bank_passbook':
-              _bankPassbookImage = File(image.path);
+              _bankPassbookImage = File(result.files.single.path!);
               break;
             case 'employee_photo':
-              _employeePhotoImage = File(image.path);
+              _employeePhotoImage = File(result.files.single.path!);
               break;
             case 'employee_signature':
-              _employeeSignatureImage = File(image.path);
+              _employeeSignatureImage = File(result.files.single.path!);
               break;
           }
         });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('File selected: ${result.files.single.name}'),
+              backgroundColor: Colors.green[600],
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error picking image: $e'),
+            content: Text('Error picking file: $e'),
             backgroundColor: Colors.red[600],
           ),
         );
@@ -740,6 +688,74 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
 
   void _submitForm() {
     print('🐛 DEBUG: ===== GOVERNMENT & BANK DETAILS FORM SUBMISSION =====');
+    print('🐛 DEBUG: Starting validation of all required fields...');
+
+    // First validate form fields
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      print('🐛 DEBUG: Form field validation failed');
+      _showValidationError('Please fill all required fields correctly');
+      return;
+    }
+
+    // Validate required documents according to API
+    List<String> missingDocuments = [];
+
+    // Check required documents
+    if (_aadharFrontImage == null) {
+      missingDocuments.add('Aadhar Card Front');
+    }
+    if (_aadharBackImage == null) {
+      missingDocuments.add('Aadhar Card Back');
+    }
+    if (_panCardImage == null) {
+      missingDocuments.add('PAN Card');
+    }
+    if (_bankPassbookImage == null) {
+      missingDocuments.add('Bank Passbook/Cheque');
+    }
+    if (_employeePhotoImage == null) {
+      missingDocuments.add('Employee Photo');
+    }
+    if (_employeeSignatureImage == null) {
+      missingDocuments.add('Employee Signature');
+    }
+
+    // If any required documents are missing, show error
+    if (missingDocuments.isNotEmpty) {
+      print(
+          '🐛 DEBUG: Missing required documents: ${missingDocuments.join(', ')}');
+      _showDocumentValidationError(missingDocuments);
+      return;
+    }
+
+    // Check required text fields according to API
+    List<String> missingFields = [];
+
+    if (_aadharController.text.trim().isEmpty) {
+      missingFields.add('Aadhar Number');
+    }
+    if (_panController.text.trim().isEmpty) {
+      missingFields.add('PAN Number');
+    }
+    if (_bankNameController.text.trim().isEmpty) {
+      missingFields.add('Bank Name');
+    }
+    if (_accountController.text.trim().isEmpty) {
+      missingFields.add('Account Number');
+    }
+    if (_ifscController.text.trim().isEmpty) {
+      missingFields.add('IFSC Code');
+    }
+
+    if (missingFields.isNotEmpty) {
+      print('🐛 DEBUG: Missing required fields: ${missingFields.join(', ')}');
+      _showValidationError(
+          'Required fields missing: ${missingFields.join(', ')}');
+      return;
+    }
+
+    // All validations passed
+    print('🐛 DEBUG: All validations passed successfully');
     print('🐛 DEBUG: Aadhar Number: ${_aadharController.text}');
     print('🐛 DEBUG: PAN Number: ${_panController.text}');
     print('🐛 DEBUG: UAN Number: ${_uanController.text}');
@@ -749,66 +765,123 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
     print('🐛 DEBUG: Account Number: ${_accountController.text}');
     print('🐛 DEBUG: IFSC Code: ${_ifscController.text}');
     print('🐛 DEBUG: Remarks: ${_remarksController.text}');
-    print(
-        '🐛 DEBUG: Aadhar Front Image: ${_aadharFrontImage?.path ?? 'Not selected'}');
-    print(
-        '🐛 DEBUG: Aadhar Back Image: ${_aadharBackImage?.path ?? 'Not selected'}');
-    print('🐛 DEBUG: PAN Card Image: ${_panCardImage?.path ?? 'Not selected'}');
-    print(
-        '🐛 DEBUG: Bank Passbook Image: ${_bankPassbookImage?.path ?? 'Not selected'}');
-    print(
-        '🐛 DEBUG: Employee Photo: ${_employeePhotoImage?.path ?? 'Not selected'}');
-    print(
-        '🐛 DEBUG: Employee Signature: ${_employeeSignatureImage?.path ?? 'Not selected'}');
+    print('🐛 DEBUG: All required documents uploaded successfully');
 
-    if (_formKey.currentState?.validate() ?? false) {
-      // Update provider with government & bank details data
-      final provider = context.read<EmployeeProvider>();
-      final govtBankData = {
-        'aadhar': _aadharController.text,
-        'pan': _panController.text,
-        'uan_number': _uanController.text,
-        'pf_member_id': _pfController.text,
-        'esic_number': _esicController.text,
-        'bank_name': _bankNameController.text,
-        'bank_account': _accountController.text,
-        'ifsc_code': _ifscController.text,
-        'remarks': _remarksController.text,
-        'aadhar_front': _aadharFrontImage,
-        'aadhar_back': _aadharBackImage,
-        'pan_file': _panCardImage,
-        'bank_document': _bankPassbookImage,
-        'employee_image': _employeePhotoImage,
-        'signature_thumb': _employeeSignatureImage,
-      };
+    // Update provider with government & bank details data
+    final provider = context.read<EmployeeProvider>();
+    final govtBankData = {
+      'aadhar': _aadharController.text,
+      'pan': _panController.text,
+      'uan_number': _uanController.text,
+      'pf_member_id': _pfController.text,
+      'esic_number': _esicController.text,
+      'bank_name': _bankNameController.text,
+      'bank_account': _accountController.text,
+      'ifsc_code': _ifscController.text,
+      'remarks': _remarksController.text,
+      'aadhar_front': _aadharFrontImage,
+      'aadhar_back': _aadharBackImage,
+      'pan_file': _panCardImage,
+      'bank_document': _bankPassbookImage,
+      'employee_image': _employeePhotoImage,
+      'signature_thumb': _employeeSignatureImage,
+    };
 
-      provider.updateFormData('govt_bank_details', govtBankData);
-      print('🐛 DEBUG: Updated provider with Government & Bank details data');
-      print(
-          '🐛 DEBUG: Current completion: ${provider.getCompletionPercentage().toStringAsFixed(1)}%');
+    provider.updateFormData('govt_bank_details', govtBankData);
+    print('🐛 DEBUG: Updated provider with Government & Bank details data');
+    print(
+        '🐛 DEBUG: Current completion: ${provider.getCompletionPercentage().toStringAsFixed(1)}%');
 
-      // Print complete summary
-      provider.printCompleteDebugSummary();
+    // Print complete summary
+    provider.printCompleteDebugSummary();
 
-      print('🐛 DEBUG: ===============================================');
+    print('🐛 DEBUG: ===============================================');
 
-      // Navigate to ESIC declaration using GoRouter
-      print('🐛 DEBUG: Navigating to ESIC Declaration...');
-      context.goNamed('esic_declaration');
-    } else {
-      print('🐛 DEBUG: Government & Bank form validation failed');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Please fill all required fields correctly'),
-            backgroundColor: Colors.red[600],
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
+    // Show success message
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 8),
+              Text('Government & Bank details saved successfully!'),
+            ],
           ),
-        );
-      }
+          backgroundColor: Colors.green[600],
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+    }
+
+    // Navigate to ESIC declaration using GoRouter
+    print('🐛 DEBUG: Navigating to ESIC Declaration...');
+    context.goNamed('esic_declaration');
+  }
+
+  void _showValidationError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(child: Text(message)),
+            ],
+          ),
+          backgroundColor: Colors.red[600],
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
+  void _showDocumentValidationError(List<String> missingDocuments) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.cloud_upload, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text(
+                    'Required Documents Missing:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ...missingDocuments.map((doc) => Padding(
+                    padding: const EdgeInsets.only(bottom: 2),
+                    child: Text('• $doc', style: const TextStyle(fontSize: 12)),
+                  )),
+              const SizedBox(height: 8),
+              const Text(
+                'Please upload all required documents to proceed.',
+                style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.orange[600],
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          duration: const Duration(seconds: 6),
+        ),
+      );
     }
   }
 

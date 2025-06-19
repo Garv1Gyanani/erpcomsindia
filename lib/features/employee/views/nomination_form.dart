@@ -85,6 +85,29 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
   @override
   void initState() {
     super.initState();
+
+    // Pre-populate witnesses with sample data for easy testing
+    _witness1Controller.text = "Witness One";
+    _witness2Controller.text = "Witness Two";
+
+    // Pre-populate first EPF nominee with all required fields including DOB
+    nominees[0].nameController.text = "EPF Nominee Name";
+    nominees[0].addressController.text = "EPF Address 123";
+    nominees[0].relationshipController.text = "Wife";
+    nominees[0].dateOfBirth = DateTime(1985, 1, 1); // This was missing!
+    nominees[0].shareController.text = "100";
+
+    // Pre-populate first family member (EPS) with sample data
+    familyMembers[0].nameController.text = "EPS Nominee";
+    familyMembers[0].ageController.text = "45";
+    familyMembers[0].relationshipController.text = "Mother";
+
+    // Pre-populate first document with sample data
+    otherDocuments[0].nameController.text = "Experience Letter";
+
+    print('🚀 DEBUG: Nomination Form - Sample data pre-populated');
+    print(
+        '⚠️ DEBUG: Note: Witness signatures are required files for API submission');
   }
 
   @override

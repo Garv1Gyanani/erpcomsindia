@@ -25,7 +25,20 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
   void initState() {
     super.initState();
 
+    // Pre-populate fields with sample data for easy testing
+    _insuranceNoController.text = "ESI12345";
+    _branchOfficeController.text = "Central Office";
+    _dispensaryController.text = "City Health Center";
+
+    // Pre-populate first family member
+    familyMembers[0].nameController.text = "Tommy Doe";
+    familyMembers[0].dobController.text = "2015-06-01";
+    familyMembers[0].relationshipController.text = "Son";
+    familyMembers[0].residing = "Yes";
+    familyMembers[0].residenceController.text = "With Parents";
+
     _setupDebugListeners();
+    print('🐛 DEBUG: ESIC Declaration Form initialized with sample data');
   }
 
   void _setupDebugListeners() {
@@ -84,8 +97,8 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
             title: const Text(
               'ESIC Declaration Form',
               style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),
             ),
@@ -833,33 +846,29 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
   }
 
   Widget _buildSubmitButton() {
-    return Container(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: _submitForm,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 18),
-          elevation: 0,
-        ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(width: 8),
-            Text(
-              'Submit',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            elevation: 0,
+            backgroundColor: AppColors.primary,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 12,
             ),
-          ],
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          onPressed: _submitForm,
+          child: const Text(
+            'Continue to EPF Declaration',
+            style: TextStyle(
+                color: Colors.white, fontSize: 16, fontWeight: FontWeight.w400),
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -950,7 +959,7 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
             Text('ESIC Declaration form saved successfully!'),
           ],
         ),
-        backgroundColor: AppColors.success,
+        backgroundColor: AppColors.black,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),

@@ -18,6 +18,15 @@ class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
     super.initState();
     if (_educationEntries.isEmpty) {
       _addEducationEntry();
+      // Pre-populate first education entry with sample data
+      final firstEntry = _educationEntries.first;
+      firstEntry.degreeController.text = "B.Tech";
+      firstEntry.universityController.text = "XYZ University";
+      firstEntry.specializationController.text = "Computer Science";
+      firstEntry.fromYearController.text = "2010";
+      firstEntry.toYearController.text = "2014";
+      firstEntry.percentageController.text = "78.5";
+      print('🚀 DEBUG: Education Details - Sample data pre-populated');
     }
   }
 
@@ -28,6 +37,18 @@ class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
   }
 
   void _removeEducationEntry(int index) {
+    // Prevent deletion if there's only one education entry
+    if (_educationEntries.length <= 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Cannot delete the last education entry. Please add more entries before deleting.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _educationEntries[index].dispose();
       _educationEntries.removeAt(index);
@@ -125,10 +146,19 @@ class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
                   ),
                 ),
                 IconButton(
-                  onPressed: () => _removeEducationEntry(index),
-                  icon: Icon(Icons.delete, color: Colors.red[600], size: 20),
+                  onPressed: _educationEntries.length > 1
+                      ? () => _removeEducationEntry(index)
+                      : null, // Disable button when only one entry
+                  icon: Icon(Icons.delete,
+                      color: _educationEntries.length > 1
+                          ? Colors.red[600]
+                          : Colors.grey[400], // Grey out when disabled
+                      size: 20),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
+                  tooltip: _educationEntries.length <= 1
+                      ? 'Cannot delete the last education entry'
+                      : 'Delete this education entry',
                 ),
               ],
             ),
@@ -364,27 +394,34 @@ class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
               ),
             ),
           ),
-          SafeArea(
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _submitEducationDetails,
-                  child:
-                      const Text('Next', style: TextStyle(color: Colors.white)),
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                ElevatedButton(
                   style: ElevatedButton.styleFrom(
+                    elevation: 0,
                     backgroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    textStyle: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: _submitEducationDetails,
+                  child: const Text(
+                    'Continue to Government Details',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ],

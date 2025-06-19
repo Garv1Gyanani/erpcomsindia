@@ -35,6 +35,19 @@ class _EpfDeclarationFormState extends State<EpfDeclarationForm> {
   @override
   void initState() {
     super.initState();
+
+    // Pre-populate fields with sample data for easy testing
+    _uanController.text = "UAN12345678";
+    _previousPfController.text = "PF987654321";
+    _exitDateController.text = "2023-12-31";
+    _schemeCertificateController.text = "SC12345";
+    _ppoController.text = "PPO67890";
+    _countryController.text = "India";
+    _passportController.text = "M1234567";
+    _passportFromController.text = "2020-01-01";
+    _passportToController.text = "2030-01-01";
+
+    print('🚀 DEBUG: EPF Declaration Form - Sample data pre-populated');
   }
 
   @override
@@ -44,10 +57,7 @@ class _EpfDeclarationFormState extends State<EpfDeclarationForm> {
       appBar: AppBar(
         title: const Text(
           'EPF Declaration Form',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+          style: TextStyle(color: Colors.white, fontSize: 18),
         ),
         backgroundColor: AppColors.primary,
         elevation: 0,

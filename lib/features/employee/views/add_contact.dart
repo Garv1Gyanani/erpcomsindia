@@ -54,6 +54,30 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
   @override
   void initState() {
     super.initState();
+    // Pre-populate fields with sample data for easy testing (using unique values)
+    _phoneController.text = "9876543210";
+    _emailController.text = "utkarsh@gmail.com";
+    _emergencyContactController.text = "9876543210";
+    _emergencyContactPersonController.text = "Mike Doe";
+    _emergencyContactRelationController.text = "Brother";
+
+    // Pre-populate present address
+    presentControllers['Street Address']?.text = "123 Main St";
+    presentControllers['City']?.text = "Apt 4B";
+    presentControllers['District']?.text = "Central District";
+    presentControllers['Post Office']?.text = "Main PO";
+    presentControllers['Thana']?.text = "City Police Station";
+    presentControllers['Pincode']?.text = "110001";
+
+    // Pre-populate permanent address
+    permanentControllers['Street Address']?.text = "456 Secondary Rd";
+    permanentControllers['City']?.text = "Floor 2";
+    permanentControllers['District']?.text = "Secondary District";
+    permanentControllers['Post Office']?.text = "Secondary PO";
+    permanentControllers['Thana']?.text = "Secondary Police Station";
+    permanentControllers['Pincode']?.text = "110002";
+
+    print('🚀 DEBUG: Contact Details - Sample data pre-populated');
   }
 
   @override
@@ -94,9 +118,9 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
         title: const Text(
           'Contact Details',
           style: TextStyle(
-              color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18),
+              color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
         ),
-        backgroundColor: Colors.red,
+        backgroundColor: AppColors.primary,
         elevation: 1.5,
       ),
       body: SingleChildScrollView(
@@ -286,8 +310,11 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
                       ),
                       onPressed: _submitForm,
                       child: const Text(
-                        'Next',
-                        style: TextStyle(color: Colors.white),
+                        'Continue to Education Details',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400),
                       ))
                 ],
               ),
