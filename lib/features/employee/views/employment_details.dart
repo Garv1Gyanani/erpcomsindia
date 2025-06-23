@@ -144,7 +144,7 @@ class _EmploymentDetailsScreenState extends State<EmploymentDetailsScreen> {
               _buildInfoCard(),
               const SizedBox(height: 20),
               _buildPreviousEmploymentSection(),
-              const SizedBox(height: 32),
+              // const SizedBox(height: 32),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -200,21 +200,6 @@ class _EmploymentDetailsScreenState extends State<EmploymentDetailsScreen> {
                 color: Colors.black87,
               ),
             ),
-            ElevatedButton(
-              onPressed: _addPreviousEmployment,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                '+ Add Employment',
-                style: TextStyle(color: Colors.white, fontSize: 10),
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 20),
@@ -266,11 +251,6 @@ class _EmploymentDetailsScreenState extends State<EmploymentDetailsScreen> {
               ),
             ],
           ),
-          if (previousEmployments.length > 1)
-            IconButton(
-              icon: const Icon(Icons.close, color: Colors.red),
-              onPressed: () => _removePreviousEmployment(index),
-            ),
           const SizedBox(height: 16),
           // Date Row
           Row(
@@ -374,30 +354,63 @@ class _EmploymentDetailsScreenState extends State<EmploymentDetailsScreen> {
               ),
             ],
           ),
+
+          // Delete button below all fields
+          if (previousEmployments.length > 1)
+            Padding(
+              padding: const EdgeInsets.only(top: 16.0),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  tooltip: 'Delete Employment',
+                  onPressed: () => _removePreviousEmployment(index),
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 
   Widget _buildSubmitButton() {
-    return ElevatedButton(
-      onPressed: _submitForm,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primary,
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+    return Column(
+      children: [
+        ElevatedButton(
+          onPressed: _addPreviousEmployment,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: const Text(
+            '+ Add Employment',
+            style: TextStyle(color: Colors.white, fontSize: 14),
+          ),
         ),
-      ),
-      child: const Text(
-        'Continue to Contact Details',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
+        const SizedBox(height: 45),
+        ElevatedButton(
+          onPressed: _submitForm,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            minimumSize: const Size(200, 50),
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: const Text(
+            'Continue to Contact Details',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 

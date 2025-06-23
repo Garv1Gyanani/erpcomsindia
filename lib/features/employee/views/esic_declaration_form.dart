@@ -959,7 +959,7 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
             Text('ESIC Declaration form saved successfully!'),
           ],
         ),
-        backgroundColor: AppColors.black,
+        backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),

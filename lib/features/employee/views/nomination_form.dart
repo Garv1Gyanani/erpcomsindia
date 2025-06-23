@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:coms_india/core/constants/app_colors.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import '../controllers/employee_provider.dart';
@@ -79,9 +78,6 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
   File? _witness1Signature;
   File? _witness2Signature;
 
-  // Other Documents Data
-  List<OtherDocumentData> otherDocuments = [OtherDocumentData()];
-
   @override
   void initState() {
     super.initState();
@@ -101,9 +97,6 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
     familyMembers[0].nameController.text = "EPS Nominee";
     familyMembers[0].ageController.text = "45";
     familyMembers[0].relationshipController.text = "Mother";
-
-    // Pre-populate first document with sample data
-    otherDocuments[0].nameController.text = "Experience Letter";
 
     print('🚀 DEBUG: Nomination Form - Sample data pre-populated');
     print(
@@ -156,8 +149,6 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
               _buildFamilyMembersList(),
               const SizedBox(height: 32),
               _buildWitnessSection(),
-              const SizedBox(height: 24),
-              _buildOtherDocumentsSection(),
               const SizedBox(height: 24),
               _buildDeclarationSection(),
               const SizedBox(height: 24),
@@ -684,267 +675,6 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
     );
   }
 
-  Widget _buildOtherDocumentsSection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.orange.withOpacity(0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.attach_file,
-                        color: Colors.orange, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Other Documents',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.gray800,
-                    ),
-                  ),
-                ],
-              ),
-              ElevatedButton(
-                onPressed: _addOtherDocument,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text(
-                  '+ Add Document',
-                  style: TextStyle(color: Colors.white, fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue.withOpacity(0.3)),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.info, color: Colors.blue, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Upload any additional documents like experience letters, certificates, or other supporting documents.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.blue[700],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          ...otherDocuments.asMap().entries.map((entry) {
-            int index = entry.key;
-            OtherDocumentData document = entry.value;
-            return _buildOtherDocumentCard(document, index);
-          }).toList(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOtherDocumentCard(OtherDocumentData document, int index) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(12),
-        color: Colors.grey.shade50,
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Document Name',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: AppColors.gray700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: document.nameController,
-                      style: const TextStyle(fontSize: 14),
-                      decoration: InputDecoration(
-                        hintText: 'e.g., Experience Letter',
-                        hintStyle: const TextStyle(
-                            color: AppColors.gray400, fontSize: 12),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                              color: AppColors.primary, width: 2),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 14),
-                      ),
-                      validator: ValidationUtils.validateDocumentName,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 2,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Document File',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: AppColors.gray700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    InkWell(
-                      onTap: () => _pickDocument(index),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 14),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(8),
-                          color: Colors.white,
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade200,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text('Choose File',
-                                  style: TextStyle(fontSize: 12)),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                document.file != null
-                                    ? document.file!.path.split('/').last
-                                    : 'No file chosen',
-                                style: TextStyle(
-                                  color: document.file != null
-                                      ? Colors.green
-                                      : Colors.grey.shade600,
-                                  fontSize: 12,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (otherDocuments.length > 1)
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.red),
-                  onPressed: () => _removeOtherDocument(index),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _addOtherDocument() {
-    setState(() {
-      otherDocuments.add(OtherDocumentData());
-    });
-  }
-
-  void _removeOtherDocument(int index) {
-    if (otherDocuments.length > 1) {
-      setState(() {
-        otherDocuments[index].dispose();
-        otherDocuments.removeAt(index);
-      });
-    }
-  }
-
-  Future<void> _pickDocument(int index) async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
-      );
-
-      if (result != null && result.files.single.path != null) {
-        setState(() {
-          otherDocuments[index].file = File(result.files.single.path!);
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('File selected: ${result.files.single.name}'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error picking file: $e')),
-      );
-    }
-  }
-
   Widget _buildDeclarationSection() {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -1061,11 +791,12 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
+            minimumSize: const Size(200, 40),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            shadowColor: AppColors.primary.withOpacity(0.4),
+            padding: const EdgeInsets.symmetric(vertical: 15),
+            // shadowColor: AppColors.primary.withOpacity(0.4),
           ),
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1224,15 +955,6 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
               })
           .toList();
 
-      // Collect other documents data
-      final otherDocumentsData = otherDocuments
-          .where((doc) => doc.hasAnyData())
-          .map((doc) => {
-                'name': doc.nameController.text,
-                'file': doc.file,
-              })
-          .toList();
-
       final nominationData = {
         'witness1_name': _witness1Controller.text,
         'witness2_name': _witness2Controller.text,
@@ -1240,7 +962,6 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
         'witness2_signature': _witness2Signature, // Add witness signature files
         'epf': epfNominees,
         'eps': epsFamily,
-        'other_documents': otherDocumentsData, // Add other documents
       };
 
       print('🐛 DEBUG: EPF Nominees: ${epfNominees.length}');
@@ -1430,9 +1151,7 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
     for (var member in familyMembers) {
       member.dispose();
     }
-    for (var document in otherDocuments) {
-      document.dispose();
-    }
+
     _witness1Controller.dispose();
     _witness2Controller.dispose();
     super.dispose();
@@ -1784,7 +1503,7 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
                 children: [
                   TextFormField(
                     controller: controller,
-                    maxLines: 3,
+                    maxLines: 1,
                     style: const TextStyle(fontSize: 14),
                     decoration: InputDecoration(
                       hintText: 'Enter full name and address',
@@ -1817,46 +1536,9 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      GestureDetector(
-                        onTap: () => _pickSignature(onFileSelected),
-                        child: Container(
-                          height: 80,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: AppColors.gray100,
-                            border: Border.all(color: AppColors.gray300),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade200,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Text('Choose File',
-                                    style: TextStyle(fontSize: 12)),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  signature != null
-                                      ? signature.path.split('/').last
-                                      : 'No file chosen',
-                                  style: TextStyle(
-                                    color: signature != null
-                                        ? Colors.green
-                                        : Colors.grey.shade600,
-                                    fontSize: 12,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      _buildSignatureUploadButton(
+                        signature,
+                        () => _pickSignature(onFileSelected),
                       ),
                     ],
                   ),
@@ -1907,46 +1589,9 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        GestureDetector(
-                          onTap: () => _pickSignature(onFileSelected),
-                          child: Container(
-                            height: 80,
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: AppColors.gray100,
-                              border: Border.all(color: AppColors.gray300),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade200,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: const Text('Choose File',
-                                      style: TextStyle(fontSize: 12)),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    signature != null
-                                        ? signature.path.split('/').last
-                                        : 'No file chosen',
-                                    style: TextStyle(
-                                      color: signature != null
-                                          ? Colors.green
-                                          : Colors.grey.shade600,
-                                      fontSize: 12,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                        _buildSignatureUploadButton(
+                          signature,
+                          () => _pickSignature(onFileSelected),
                         ),
                       ],
                     ),
@@ -1960,40 +1605,71 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
     );
   }
 
+  Widget _buildSignatureUploadButton(File? file, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: AppColors.gray100,
+          border: Border.all(color: AppColors.gray300),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              file != null ? Icons.check_circle : Icons.upload_file,
+              color: file != null ? Colors.green : Colors.grey[600],
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                file != null ? 'File Selected' : 'Choose File (Image/PDF)',
+                style: TextStyle(
+                  color: file != null ? Colors.green : Colors.grey[600],
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _pickSignature(Function(File?) onFileSelected) async {
     try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 800,
-        maxHeight: 600,
-        imageQuality: 80,
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+        allowMultiple: false,
       );
 
-      if (image != null) {
-        onFileSelected(File(image.path));
+      if (result != null && result.files.single.path != null) {
+        onFileSelected(File(result.files.single.path!));
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('File selected: ${result.files.single.name}'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error picking image: $e'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking file: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
-  }
-}
-
-class OtherDocumentData {
-  final TextEditingController nameController = TextEditingController();
-  File? file;
-
-  void dispose() {
-    nameController.dispose();
-  }
-
-  bool hasAnyData() {
-    return nameController.text.isNotEmpty || file != null;
   }
 }
 

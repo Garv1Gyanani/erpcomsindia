@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io';
 import 'package:coms_india/core/services/storage_service.dart';
+import 'package:image_picker/image_picker.dart';
 
 class EmployeeEditPage extends StatefulWidget {
   final int userId;
@@ -77,6 +80,17 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
   List<Map<String, dynamic>> _epfNominees = [];
   List<Map<String, dynamic>> _epsNominees = [];
   List<Map<String, dynamic>> _familyMembersList = [];
+
+  // Image picker and selected images
+  final ImagePicker _imagePicker = ImagePicker();
+  File? _selectedEmployeeImage;
+  File? _selectedAadharFront;
+  File? _selectedAadharBack;
+  File? _selectedPanCard;
+  File? _selectedBankDocument;
+  File? _selectedSignature;
+  File? _selectedWitness1Signature;
+  File? _selectedWitness2Signature;
 
   @override
   void initState() {
@@ -634,6 +648,8 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
             children: [
               _buildBasicInfoSection(),
               const SizedBox(height: 16),
+              _buildDocumentImagesSection(),
+              const SizedBox(height: 16),
               _buildContactSection(),
               const SizedBox(height: 16),
               _buildAddressSection(),
@@ -853,28 +869,20 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
         ),
       ),
       const SizedBox(height: 12),
-      Row(
-        children: [
-          Expanded(
-            child: TextFormField(
-              controller: _emergencyContactController,
-              decoration: const InputDecoration(
-                labelText: 'Emergency Contact',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextFormField(
-              controller: _emergencyContactRelationController,
-              decoration: const InputDecoration(
-                labelText: 'Relation',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-        ],
+      TextFormField(
+        controller: _emergencyContactController,
+        decoration: const InputDecoration(
+          labelText: 'Emergency Contact',
+          border: OutlineInputBorder(),
+        ),
+      ),
+      const SizedBox(height: 12),
+      TextFormField(
+        controller: _emergencyContactRelationController,
+        decoration: const InputDecoration(
+          labelText: 'Relation',
+          border: OutlineInputBorder(),
+        ),
       ),
     ]);
   }
@@ -972,28 +980,20 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _familyRelationControllers[index],
-                          decoration: const InputDecoration(
-                            labelText: 'Relation',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _familyOccupationControllers[index],
-                          decoration: const InputDecoration(
-                            labelText: 'Occupation',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                    ],
+                  TextFormField(
+                    controller: _familyRelationControllers[index],
+                    decoration: const InputDecoration(
+                      labelText: 'Relation',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _familyOccupationControllers[index],
+                    decoration: const InputDecoration(
+                      labelText: 'Occupation',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
@@ -1025,9 +1025,10 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
       const SizedBox(height: 8),
       ElevatedButton.icon(
         onPressed: _addFamilyMember,
-        icon: const Icon(Icons.add),
-        label: const Text('Add Family Member'),
-        style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('Add Family Member',
+            style: TextStyle(color: Colors.white)),
+        style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
       ),
     ]);
   }
@@ -1070,28 +1071,20 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
         ),
       ),
       const SizedBox(height: 12),
-      Row(
-        children: [
-          Expanded(
-            child: TextFormField(
-              controller: _bankAccountController,
-              decoration: const InputDecoration(
-                labelText: 'Account Number',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextFormField(
-              controller: _ifscCodeController,
-              decoration: const InputDecoration(
-                labelText: 'IFSC Code',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-        ],
+      TextFormField(
+        controller: _bankAccountController,
+        decoration: const InputDecoration(
+          labelText: 'Account Number',
+          border: OutlineInputBorder(),
+        ),
+      ),
+      const SizedBox(height: 12),
+      TextFormField(
+        controller: _ifscCodeController,
+        decoration: const InputDecoration(
+          labelText: 'IFSC Code',
+          border: OutlineInputBorder(),
+        ),
       ),
       const SizedBox(height: 12),
       TextFormField(
@@ -1124,21 +1117,14 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
 
   Widget _buildEmploymentSection() {
     return _buildSection('Employment Details', [
-      TextFormField(
-        controller: _punchingCodeController,
-        decoration: const InputDecoration(
-          labelText: 'Punching Code',
-          border: OutlineInputBorder(),
-        ),
-      ),
-      const SizedBox(height: 12),
       DropdownButtonFormField<String>(
         value: _selectedJoiningMode,
         decoration: const InputDecoration(
           labelText: 'Joining Mode',
           border: OutlineInputBorder(),
         ),
-        items: ['interview', 'reference', 'direct', 'other'].map((mode) {
+        items: ['interview', 'reference', 'direct', 'other', 'referral']
+            .map((mode) {
           return DropdownMenuItem(value: mode, child: Text(mode.toUpperCase()));
         }).toList(),
         onChanged: (value) => setState(() => _selectedJoiningMode = value!),
@@ -1207,32 +1193,24 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
                 : null,
       ),
       const SizedBox(height: 12),
-      Row(
-        children: [
-          Expanded(
-            child: TextFormField(
-              controller: _witness1NameController,
-              decoration: const InputDecoration(
-                labelText: 'Witness 1 Name *',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) =>
-                  value?.isEmpty == true ? 'Witness 1 name is required' : null,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextFormField(
-              controller: _witness2NameController,
-              decoration: const InputDecoration(
-                labelText: 'Witness 2 Name *',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) =>
-                  value?.isEmpty == true ? 'Witness 2 name is required' : null,
-            ),
-          ),
-        ],
+      TextFormField(
+        controller: _witness1NameController,
+        decoration: const InputDecoration(
+          labelText: 'Witness 1 Name *',
+          border: OutlineInputBorder(),
+        ),
+        validator: (value) =>
+            value?.isEmpty == true ? 'Witness 1 name is required' : null,
+      ),
+      const SizedBox(height: 12),
+      TextFormField(
+        controller: _witness2NameController,
+        decoration: const InputDecoration(
+          labelText: 'Witness 2 Name *',
+          border: OutlineInputBorder(),
+        ),
+        validator: (value) =>
+            value?.isEmpty == true ? 'Witness 2 name is required' : null,
       ),
     ]);
   }
@@ -1260,28 +1238,20 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
         ),
       ),
       const SizedBox(height: 12),
-      Row(
-        children: [
-          Expanded(
-            child: TextFormField(
-              controller: _branchOfficeController,
-              decoration: const InputDecoration(
-                labelText: 'Branch Office',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextFormField(
-              controller: _dispensaryController,
-              decoration: const InputDecoration(
-                labelText: 'Dispensary',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-        ],
+      TextFormField(
+        controller: _branchOfficeController,
+        decoration: const InputDecoration(
+          labelText: 'Branch Office',
+          border: OutlineInputBorder(),
+        ),
+      ),
+      const SizedBox(height: 12),
+      TextFormField(
+        controller: _dispensaryController,
+        decoration: const InputDecoration(
+          labelText: 'Dispensary',
+          border: OutlineInputBorder(),
+        ),
       ),
       const SizedBox(height: 12),
       Row(
@@ -1315,5 +1285,461 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
         ],
       ),
     ]);
+  }
+
+  Widget _buildDocumentImagesSection() {
+    final emp = widget.employeeData;
+
+    return _buildSection('Document Images', [
+      // Employee Photo
+      _buildUploadableImageRow(
+        'Employee Photo',
+        emp['employee_image_path'],
+        _selectedEmployeeImage,
+        () => _pickImage('employee_photo'),
+      ),
+      const SizedBox(height: 16),
+
+      // Aadhar Documents
+      Row(
+        children: [
+          Expanded(
+            child: _buildUploadableImageCard(
+              'Aadhar Front',
+              emp['aadhar_front_path'],
+              _selectedAadharFront,
+              () => _pickImage('aadhar_front'),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildUploadableImageCard(
+              'Aadhar Back',
+              emp['aadhar_back_path'],
+              _selectedAadharBack,
+              () => _pickImage('aadhar_back'),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 16),
+
+      // PAN and Bank Documents
+      Row(
+        children: [
+          Expanded(
+            child: _buildUploadableImageCard(
+              'PAN Card',
+              emp['pan_file_path'],
+              _selectedPanCard,
+              () => _pickImage('pan_card'),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildUploadableImageCard(
+              'Bank Document',
+              emp['bank_document_path'],
+              _selectedBankDocument,
+              () => _pickImage('bank_document'),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 16),
+
+      // Signature and Witness Signatures
+      _buildUploadableImageRow(
+        'Employee Signature',
+        emp['signature_thumb_path'],
+        _selectedSignature,
+        () => _pickImage('signature'),
+      ),
+      const SizedBox(height: 16),
+
+      Row(
+        children: [
+          Expanded(
+            child: _buildUploadableImageCard(
+              'Witness 1 Signature',
+              emp['witness_1_signature_path'],
+              _selectedWitness1Signature,
+              () => _pickImage('witness1_signature'),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildUploadableImageCard(
+              'Witness 2 Signature',
+              emp['witness_2_signature_path'],
+              _selectedWitness2Signature,
+              () => _pickImage('witness2_signature'),
+            ),
+          ),
+        ],
+      ),
+    ]);
+  }
+
+  Future<void> _pickImage(String imageType) async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          switch (imageType) {
+            case 'employee_photo':
+              _selectedEmployeeImage = File(image.path);
+              break;
+            case 'aadhar_front':
+              _selectedAadharFront = File(image.path);
+              break;
+            case 'aadhar_back':
+              _selectedAadharBack = File(image.path);
+              break;
+            case 'pan_card':
+              _selectedPanCard = File(image.path);
+              break;
+            case 'bank_document':
+              _selectedBankDocument = File(image.path);
+              break;
+            case 'signature':
+              _selectedSignature = File(image.path);
+              break;
+            case 'witness1_signature':
+              _selectedWitness1Signature = File(image.path);
+              break;
+            case 'witness2_signature':
+              _selectedWitness2Signature = File(image.path);
+              break;
+          }
+        });
+      }
+    } catch (e) {
+      print('Error picking image: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to pick image. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Widget _buildUploadableImageRow(
+      String title, String? imagePath, File? selectedFile, VoidCallback onTap) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Colors.black87,
+              ),
+            ),
+            const Spacer(),
+            TextButton.icon(
+              onPressed: onTap,
+              icon: const Icon(Icons.camera_alt, size: 18),
+              label: Text(selectedFile != null ? 'Change' : 'Upload'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        _buildEnhancedImageWidget(imagePath, selectedFile, height: 160),
+      ],
+    );
+  }
+
+  Widget _buildUploadableImageCard(
+      String title, String? imagePath, File? selectedFile, VoidCallback onTap) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+            IconButton(
+              onPressed: onTap,
+              icon: const Icon(Icons.camera_alt, size: 18),
+              color: Colors.red,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              tooltip: selectedFile != null ? 'Change Image' : 'Upload Image',
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        _buildEnhancedImageWidget(imagePath, selectedFile, height: 130),
+      ],
+    );
+  }
+
+  Widget _buildEnhancedImageWidget(String? imagePath, File? selectedFile,
+      {double height = 150}) {
+    return GestureDetector(
+      onTap: () {
+        if (selectedFile != null) {
+          _showFullScreenImageFile(selectedFile);
+        } else if (imagePath != null && imagePath.isNotEmpty) {
+          _showFullScreenImage('https://erp.comsindia.in/$imagePath');
+        }
+      },
+      child: Container(
+        height: height,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: selectedFile != null
+                  ? Image.file(
+                      selectedFile,
+                      height: height,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    )
+                  : imagePath != null && imagePath.isNotEmpty
+                      ? Image.network(
+                          'https://erp.comsindia.in/$imagePath',
+                          height: height,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              height: height,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes !=
+                                          null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              height: height,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: const Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    size: 32,
+                                    color: Colors.red,
+                                  ),
+                                  SizedBox(height: 6),
+                                  Text(
+                                    'Failed to load',
+                                    style: TextStyle(
+                                      color: Colors.red,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          height: height,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.grey.shade300,
+                              style: BorderStyle.solid,
+                            ),
+                          ),
+                          child: const Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.add_photo_alternate_outlined,
+                                size: 40,
+                                color: Colors.grey,
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'No Image',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              Text(
+                                'Tap to upload',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+            ),
+            if (selectedFile != null)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'NEW',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showFullScreenImageFile(File imageFile) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppBar(
+              backgroundColor: Colors.black,
+              leading: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              title: const Text(
+                'Selected Image',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            Expanded(
+              child: InteractiveViewer(
+                child: Image.file(
+                  imageFile,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showFullScreenImage(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppBar(
+              backgroundColor: Colors.black,
+              leading: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              title: const Text(
+                'Document Image',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            Expanded(
+              child: InteractiveViewer(
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 60,
+                            color: Colors.red,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'Failed to load image',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

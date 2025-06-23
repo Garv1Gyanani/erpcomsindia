@@ -67,6 +67,9 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
   File? _employeePhotoImage;
   File? _employeeSignatureImage;
 
+  // Other Documents Data
+  List<OtherDocumentData> otherDocuments = [OtherDocumentData()];
+
   // Verification checkboxes
   bool _ifscVerified = false;
   bool _bankAccountVerified = false;
@@ -84,6 +87,10 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
     _accountController.text = "1234567890";
     _ifscController.text = "HDFC0001234";
     _remarksController.text = "This is a sample remark.";
+
+    // Pre-populate first document with sample data
+    otherDocuments[0].nameController.text = "Experience Letter";
+
     print('🚀 DEBUG: Government & Bank Details - Sample data pre-populated');
   }
 
@@ -129,6 +136,8 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
               _buildSectionHeader('Documents & Remarks'),
               const SizedBox(height: 16),
               _buildDocumentsRemarksSection(),
+              const SizedBox(height: 32),
+              _buildOtherDocumentsSection(),
               const SizedBox(height: 32),
               _buildSubmitButton(),
             ],
@@ -429,6 +438,271 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
         ],
       ),
     );
+  }
+
+  Widget _buildOtherDocumentsSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.attach_file,
+                        color: Colors.orange, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Other Documents',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+              ElevatedButton(
+                onPressed: _addOtherDocument,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  '+ Add Document',
+                  style: TextStyle(color: Colors.white, fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info, color: Colors.blue, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Upload any additional documents like experience letters, certificates, or other supporting documents.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          ...otherDocuments.asMap().entries.map((entry) {
+            int index = entry.key;
+            OtherDocumentData document = entry.value;
+            return _buildOtherDocumentCard(document, index);
+          }).toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOtherDocumentCard(OtherDocumentData document, int index) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.grey.shade50,
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Document Name',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: document.nameController,
+                      style: const TextStyle(fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: 'e.g., Experience Letter',
+                        hintStyle:
+                            TextStyle(color: Colors.grey[400], fontSize: 12),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                              color: AppColors.primary, width: 2),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 14),
+                      ),
+                      validator: ValidationUtils.validateDocumentName,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Document File',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: () => _pickOtherDocument(index),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 14),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.white,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text('Choose File',
+                                  style: TextStyle(fontSize: 12)),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                document.file != null
+                                    ? document.file!.path.split('/').last
+                                    : 'No file chosen',
+                                style: TextStyle(
+                                  color: document.file != null
+                                      ? Colors.green
+                                      : Colors.grey.shade600,
+                                  fontSize: 12,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (otherDocuments.length > 1)
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.red),
+                  onPressed: () => _removeOtherDocument(index),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _addOtherDocument() {
+    setState(() {
+      otherDocuments.add(OtherDocumentData());
+    });
+  }
+
+  void _removeOtherDocument(int index) {
+    if (otherDocuments.length > 1) {
+      setState(() {
+        otherDocuments[index].dispose();
+        otherDocuments.removeAt(index);
+      });
+    }
+  }
+
+  Future<void> _pickOtherDocument(int index) async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+      );
+
+      if (result != null && result.files.single.path != null) {
+        setState(() {
+          otherDocuments[index].file = File(result.files.single.path!);
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('File selected: ${result.files.single.name}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking file: $e')),
+        );
+      }
+    }
   }
 
   Widget _buildTextFormField({
@@ -785,6 +1059,13 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
       'bank_document': _bankPassbookImage,
       'employee_image': _employeePhotoImage,
       'signature_thumb': _employeeSignatureImage,
+      'other_documents': otherDocuments
+          .where((doc) => doc.hasAnyData())
+          .map((doc) => {
+                'name': doc.nameController.text,
+                'file': doc.file,
+              })
+          .toList(),
     };
 
     provider.updateFormData('govt_bank_details', govtBankData);
@@ -896,6 +1177,25 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
     _accountController.dispose();
     _ifscController.dispose();
     _remarksController.dispose();
+
+    // Dispose other documents
+    for (var document in otherDocuments) {
+      document.dispose();
+    }
+
     super.dispose();
+  }
+}
+
+class OtherDocumentData {
+  final TextEditingController nameController = TextEditingController();
+  File? file;
+
+  void dispose() {
+    nameController.dispose();
+  }
+
+  bool hasAnyData() {
+    return nameController.text.isNotEmpty || file != null;
   }
 }

@@ -89,7 +89,12 @@ class _EpfDeclarationFormState extends State<EpfDeclarationForm> {
               const SizedBox(height: 20),
               _buildInternationalWorkerCard(),
               const SizedBox(height: 30),
-              _buildSubmitButton(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  _buildSubmitButton(),
+                ],
+              ),
             ],
           ),
         ),
@@ -577,34 +582,26 @@ class _EpfDeclarationFormState extends State<EpfDeclarationForm> {
   }
 
   Widget _buildSubmitButton() {
-    return Container(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: _submitForm,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.success,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 18),
-          elevation: 4,
-          shadowColor: AppColors.success.withOpacity(0.4),
+    return ElevatedButton.icon(
+      onPressed: _submitForm,
+      label: const Text(
+        'Continue to Nomination Form',
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: Colors.white,
+          letterSpacing: 0.2,
         ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.save, size: 20),
-            SizedBox(width: 8),
-            Text(
-              'Submit',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+      ),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        minimumSize: const Size(200, 40),
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
         ),
+        elevation: 1,
+        shadowColor: AppColors.primary.withOpacity(0.15),
       ),
     );
   }

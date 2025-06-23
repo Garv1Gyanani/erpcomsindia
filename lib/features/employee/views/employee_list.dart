@@ -123,6 +123,13 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
     final departmentName = department['department_name'] ?? 'N/A';
     final designationName = designation['designation_name'] ?? 'N/A';
 
+    // Extract employee image path
+    final imagePath = emp['employee_image_path'] as String?;
+    String? imageUrl;
+    if (imagePath != null && imagePath.isNotEmpty) {
+      imageUrl = 'https://erp.comsindia.in/$imagePath';
+    }
+
     // Extract roles
     final roles = user['roles'] as List<dynamic>? ?? [];
     String roleText = 'No Role';
@@ -160,6 +167,7 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
       'role': roleText,
       'color': roleColor,
       'site': siteName,
+      'image_url': imageUrl,
       'user_id': user['id'],
       'department_id': emp['department_id'],
       'designation_id': emp['designation_id'],
@@ -287,57 +295,107 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
             elevation: 3,
             margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: emp['color'] ?? Colors.blue,
-                child: Text(
-                  emp['name']?.toString().isNotEmpty == true
-                      ? emp['name'][0].toUpperCase()
-                      : '?',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              leading: emp['image_url'] != null
+                  ? CircleAvatar(
+                      backgroundColor: emp['color'] ?? Colors.blue,
+                      backgroundImage: NetworkImage(emp['image_url']),
+                      onBackgroundImageError: (exception, stackTrace) {
+                        print('Error loading employee image: $exception');
+                      },
+                    )
+                  : CircleAvatar(
+                      backgroundColor: emp['color'] ?? Colors.blue,
+                      child: Text(
+                        emp['name']?.toString().isNotEmpty == true
+                            ? emp['name'][0].toUpperCase()
+                            : '?',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
               title: Text(
                 emp['name'] ?? 'Unknown',
-                style: const TextStyle(fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('ID: ${emp['id']} | Dept: ${emp['department']}'),
+                  const SizedBox(height: 4),
+                  if (emp['id']?.toString().isNotEmpty == true &&
+                      emp['id'] != 'N/A')
+                    Text(
+                      'ID: ${emp['id']}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   if (emp['designation']?.toString().isNotEmpty == true)
                     Text(
-                      'Designation: ${emp['designation']}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
+                      '${emp['designation']}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   if (emp['site']?.toString().isNotEmpty == true &&
                       emp['site'] != 'N/A')
-                    Text(
-                      'Site: ${emp['site']}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        'Site: ${emp['site']}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black45,
+                        ),
                       ),
                     ),
                 ],
               ),
-              trailing: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Chip(
-                    label: Text(
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: emp['color'] ?? Colors.grey,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
                       emp['role'] ?? 'No Role',
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 12,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    backgroundColor: emp['color'] ?? Colors.grey,
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.delete, color: Colors.red[700], size: 20),
+                    tooltip: 'Delete Employee',
+                    onPressed: () {
+                      if (emp['user_id'] != null) {
+                        _deleteEmployee(emp['user_id']);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                                'Cannot delete employee: User ID is missing.'),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
+                      }
+                    },
                   ),
                 ],
               ),
@@ -427,5 +485,81 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _deleteEmployee(int userId) async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Deletion'),
+        content: const Text('Are you sure you want to delete this employee?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    try {
+      final token = await _storageService.getToken();
+      if (token == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Authentication error. Please login again.')),
+        );
+        return;
+      }
+
+      final response = await http.delete(
+        Uri.parse('https://erp.comsindia.in/api/employee/delete/$userId'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        // Success
+        setState(() {
+          _employees.removeWhere((emp) => emp['user_id'] == userId);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Employee deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        // Error
+        final errorData = json.decode(response.body);
+        final errorMessage =
+            errorData['message'] ?? 'Failed to delete employee.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('An error occurred. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

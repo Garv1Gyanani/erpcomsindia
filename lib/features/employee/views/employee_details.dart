@@ -1,3 +1,4 @@
+import 'package:coms_india/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -206,7 +207,11 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildEmployeePhotoSection(),
+          const SizedBox(height: 20),
           _buildBasicInfoSection(),
+          const SizedBox(height: 16),
+          _buildDocumentImagesSection(),
           const SizedBox(height: 16),
           _buildContactSection(),
           const SizedBox(height: 16),
@@ -219,6 +224,8 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
           _buildBankDetailsSection(),
           const SizedBox(height: 16),
           _buildEmploymentSection(),
+          const SizedBox(height: 16),
+          _buildPreviousEmploymentSection(),
           const SizedBox(height: 16),
           _buildEPFSection(),
           const SizedBox(height: 16),
@@ -404,6 +411,24 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
   }
 
   Widget _buildEmploymentSection() {
+    final user = _employeeData!['user'] ?? {};
+    final empAssignSite = user['emp_assign_site'] ?? {};
+    final site = empAssignSite['site'] ?? {};
+
+    return _buildSection('Current Employment Details', [
+      _buildDetailRow('Site', site['site_name']),
+      _buildDetailRow('Site Address', site['address']),
+      _buildDetailRow('Site Contact Person', site['contact_person']),
+      _buildDetailRow('Site Email', site['email']),
+      _buildDetailRow('Site Phone', site['phone']),
+      _buildDetailRow('Contract Start', site['contract_start_date']),
+      _buildDetailRow('Contract End', site['contract_end_date']),
+      _buildDetailRow('Joining Mode', _employeeData!['joining_mode']),
+      _buildDetailRow('Punching Code', _employeeData!['punching_code']),
+    ]);
+  }
+
+  Widget _buildPreviousEmploymentSection() {
     // Parse previous employment
     List<dynamic> previousEmployment = [];
     try {
@@ -414,25 +439,10 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
       print('Error parsing previous employment: $e');
     }
 
-    final user = _employeeData!['user'] ?? {};
-    final empAssignSite = user['emp_assign_site'] ?? {};
-    final site = empAssignSite['site'] ?? {};
-
-    return _buildSection('Employment Details', [
-      _buildDetailRow('Site', site['site_name']),
-      _buildDetailRow('Site Address', site['address']),
-      _buildDetailRow('Site Contact Person', site['contact_person']),
-      _buildDetailRow('Site Email', site['email']),
-      _buildDetailRow('Site Phone', site['phone']),
-      _buildDetailRow('Contract Start', site['contract_start_date']),
-      _buildDetailRow('Contract End', site['contract_end_date']),
-      _buildDetailRow('Joining Mode', _employeeData!['joining_mode']),
-      _buildDetailRow('Punching Code', _employeeData!['punching_code']),
-      const SizedBox(height: 16),
-      if (previousEmployment.isNotEmpty) ...[
-        const Text('Previous Employment:',
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
+    return _buildSection('Previous Employment Details', [
+      if (previousEmployment.isEmpty)
+        const Text('No previous employment records available')
+      else
         ...previousEmployment.asMap().entries.map((entry) {
           final index = entry.key;
           final emp = entry.value;
@@ -440,7 +450,7 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Employment ${index + 1}:',
-                  style: const TextStyle(fontWeight: FontWeight.w500)),
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
               _buildDetailRow('Company', emp['company_name']),
               _buildDetailRow('Designation', emp['designation']),
               _buildDetailRow('From Date', emp['from_date']),
@@ -450,7 +460,6 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
             ],
           );
         }).toList(),
-      ],
     ]);
   }
 
@@ -547,5 +556,350 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
         }).toList(),
       ],
     ]);
+  }
+
+  Widget _buildEmployeePhotoSection() {
+    final user = _employeeData!['user'] ?? {};
+    final employeeName = user['name'] ?? 'Employee';
+    final employeeId = _employeeData!['employee_id'] ?? '';
+    final imagePath = _employeeData!['employee_image_path'];
+
+    return Center(
+      child: Column(
+        children: [
+          // Circular Employee Photo
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.grey.shade300,
+                width: 1,
+              ),
+            ),
+            child: ClipOval(
+              child: _buildCircularEmployeeImage(imagePath),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Employee Name
+          Text(
+            employeeName,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          // Employee ID
+          Text(
+            'ID: $employeeId',
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.grey,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCircularEmployeeImage(String? imagePath) {
+    if (imagePath == null || imagePath.isEmpty) {
+      return Container(
+        width: 150,
+        height: 150,
+        color: Colors.grey.shade200,
+        child: const Icon(
+          Icons.person,
+          size: 80,
+          color: Colors.grey,
+        ),
+      );
+    }
+
+    final imageUrl = 'https://erp.comsindia.in/$imagePath';
+
+    return Image.network(
+      imageUrl,
+      width: 150,
+      height: 150,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Container(
+          width: 150,
+          height: 150,
+          child: Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                  : null,
+            ),
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          width: 150,
+          height: 150,
+          color: Colors.grey.shade200,
+          child: const Icon(
+            Icons.person,
+            size: 80,
+            color: Colors.grey,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDocumentImagesSection() {
+    return _buildSection('Document Images', [
+      // Aadhar Documents
+      _buildDocumentLineItem(
+        'Aadhar Front',
+        _employeeData!['aadhar_front_path'],
+        Icons.credit_card,
+      ),
+      const SizedBox(height: 12),
+      _buildDocumentLineItem(
+        'Aadhar Back',
+        _employeeData!['aadhar_back_path'],
+        Icons.credit_card,
+      ),
+      const SizedBox(height: 12),
+
+      // PAN Card
+      _buildDocumentLineItem(
+        'PAN Card',
+        _employeeData!['pan_file_path'],
+        Icons.account_balance_wallet,
+      ),
+      const SizedBox(height: 12),
+
+      // Bank Document
+      _buildDocumentLineItem(
+        'Bank Document',
+        _employeeData!['bank_document_path'],
+        Icons.account_balance,
+      ),
+      const SizedBox(height: 12),
+
+      // Employee Signature
+      _buildDocumentLineItem(
+        'Employee Signature',
+        _employeeData!['signature_thumb_path'],
+        Icons.draw,
+      ),
+      const SizedBox(height: 12),
+
+      // Witness Signatures
+      _buildDocumentLineItem(
+        'Witness 1 Signature',
+        _employeeData!['witness_1_signature_path'],
+        Icons.edit,
+      ),
+      const SizedBox(height: 12),
+      _buildDocumentLineItem(
+        'Witness 2 Signature',
+        _employeeData!['witness_2_signature_path'],
+        Icons.edit,
+      ),
+    ]);
+  }
+
+  Widget _buildDocumentLineItem(
+      String title, String? imagePath, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+        color: Colors.grey.shade50,
+      ),
+      child: Row(
+        children: [
+          // Document Icon
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: Colors.red.shade100,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              color: Colors.red,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          // Document Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  imagePath != null && imagePath.isNotEmpty
+                      ? 'Document Available'
+                      : 'Not Available',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: imagePath != null && imagePath.isNotEmpty
+                        ? Colors.green
+                        : Colors.red,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Document Preview
+          GestureDetector(
+            onTap: () {
+              if (imagePath != null && imagePath.isNotEmpty) {
+                _showFullScreenImage('https://erp.comsindia.in/$imagePath');
+              }
+            },
+            child: Container(
+              width: 80,
+              height: 60,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(5),
+                child: _buildDocumentPreview(imagePath),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDocumentPreview(String? imagePath) {
+    if (imagePath == null || imagePath.isEmpty) {
+      return Container(
+        width: 80,
+        height: 60,
+        color: Colors.grey.shade200,
+        child: const Icon(
+          Icons.image_not_supported,
+          size: 24,
+          color: Colors.grey,
+        ),
+      );
+    }
+
+    final imageUrl = 'https://erp.comsindia.in/$imagePath';
+
+    return Image.network(
+      imageUrl,
+      width: 80,
+      height: 60,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Container(
+          width: 80,
+          height: 60,
+          child: const Center(
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          width: 80,
+          height: 60,
+          color: Colors.grey.shade200,
+          child: const Icon(
+            Icons.error_outline,
+            size: 24,
+            color: Colors.red,
+          ),
+        );
+      },
+    );
+  }
+
+  void _showFullScreenImage(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppBar(
+              backgroundColor: Colors.black,
+              leading: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              title: const Text(
+                'Document Image',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            Expanded(
+              child: InteractiveViewer(
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(
+                      child: CircularProgressIndicator(color: Colors.white),
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 60,
+                            color: Colors.red,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'Failed to load image',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

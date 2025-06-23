@@ -245,9 +245,21 @@ class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
       // ✅ Navigate to next screen
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text(
-                  'Education details saved! Continue to government & bank details.')),
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Text('Education details saved successfully!'),
+              ],
+            ),
+            backgroundColor: AppColors.primary,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
         );
         context.goNamed('govt_bank_details');
       }
@@ -287,16 +299,6 @@ class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
         backgroundColor: AppColors.primary,
         elevation: 0,
         centerTitle: true,
-        actions: [
-          Tooltip(
-            textStyle: const TextStyle(color: Colors.white),
-            message: 'Add Education Entry',
-            child: IconButton(
-              onPressed: _addEducationEntry,
-              icon: const Icon(Icons.add, color: Colors.white),
-            ),
-          )
-        ],
       ),
       body: Column(
         children: [
@@ -306,33 +308,35 @@ class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  if (_educationEntries.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.white),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.info_outline,
-                              color: Colors.blue.shade700, size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Fill in your educational background details below',
-                              style: TextStyle(
-                                color: Colors.blue.shade700,
-                                fontSize: 13,
-                              ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.white),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline,
+                            color: Colors.blue.shade700, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Fill in your educational background details below',
+                            style: TextStyle(
+                              color: Colors.blue.shade700,
+                              fontSize: 13,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
+                  ),
                   const SizedBox(height: 16),
+
+                  // Add New Education Details Button
+
                   if (_educationEntries.isEmpty)
                     Center(
                       child: Column(
@@ -354,27 +358,10 @@ class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            "Tap the + button to add your first entry",
+                            "Tap the button above to add your first entry",
                             style: TextStyle(
                               color: Colors.grey[500],
                               fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          ElevatedButton.icon(
-                            onPressed: _addEducationEntry,
-                            icon: const Icon(Icons.add, color: Colors.white),
-                            label: const Text(
-                              'Add Education Entry',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
                             ),
                           ),
                         ],
@@ -390,6 +377,34 @@ class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
                             _educationEntries[index], index);
                       },
                     ),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: _addEducationEntry,
+                        icon: const Icon(Icons.add,
+                            color: Colors.white, size: 20),
+                        label: const Text(
+                          'Add Education',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -426,14 +441,6 @@ class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
           ),
         ],
       ),
-      // floatingActionButton: _educationEntries.isNotEmpty
-      //     ? FloatingActionButton(
-      //         onPressed: _addEducationEntry,
-      //         backgroundColor: Colors.red,
-      //         child: const Icon(Icons.add, color: Colors.white),
-      //         tooltip: 'Add Education Entry',
-      //       )
-      //     : null,
     );
   }
 }

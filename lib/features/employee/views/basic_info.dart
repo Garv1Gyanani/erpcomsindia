@@ -1,3 +1,4 @@
+import 'package:coms_india/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -181,7 +182,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
     print('🚀 DEBUG: Initial family members count: ${familyMembers.length}');
 
     // Pre-populate fields with sample data for easy testing
-    _nameController.text = "Utkarsh1";
+    _nameController.text = "Utkarsh";
     _selectedGender = "Male";
     _selectedStatus = "Married";
     _selectedBloodGroup = "A+";
@@ -239,8 +240,8 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
             }
           },
         ),
-        backgroundColor: Colors.red,
-        title: const Text('Add Employee',
+        backgroundColor: AppColors.primary,
+        title: const Text('Basic Information',
             style: TextStyle(color: Colors.white, fontSize: 18)),
       ),
       body: Consumer<EmployeeProvider>(
@@ -272,7 +273,6 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (currentStep == 0) ...[
-                    sectionTitle('Basic Information'),
                     rowWrap([
                       _buildTextField(_nameController, 'Employee Name *'),
                     ]),
@@ -313,68 +313,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                       }),
                     ]),
                     const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 40, vertical: 14),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          onPressed: () {
-                            print(
-                                '🎯 DEBUG: "Next" button clicked - validating form...');
-                            if (_formKey.currentState!.validate()) {
-                              print('✅ DEBUG: Form validation passed!');
-
-                              // Debug print basic info when moving to next step
-                              print(
-                                  '🔄 DEBUG: ===== BASIC INFO STEP COMPLETED =====');
-                              print(
-                                  '🔄 DEBUG: Employee Name: "${_nameController.text}"');
-                              print('🔄 DEBUG: Gender: $_selectedGender');
-                              print('🔄 DEBUG: DOB: $_dob');
-                              print('🔄 DEBUG: DOJ: $_doj');
-                              print(
-                                  '🔄 DEBUG: Marital Status: $_selectedStatus');
-                              print(
-                                  '🔄 DEBUG: Blood Group: $_selectedBloodGroup');
-                              print('🔄 DEBUG: Religion: $_selectedReligion');
-                              print(
-                                  '🔄 DEBUG: Family Members Count: ${familyMembers.length}');
-
-                              // Debug print family members details
-                              for (int i = 0; i < familyMembers.length; i++) {
-                                final member = familyMembers[i];
-                                print('🔄 DEBUG: Family Member ${i + 1}:');
-                                print(
-                                    '  Name: "${member.nameController.text}"');
-                                print(
-                                    '  Relation: "${member.relationController.text}"');
-                                print(
-                                    '  Occupation: "${member.occupationController.text}"');
-                                print('  DOB: ${member.dateOfBirth}');
-                              }
-                              print(
-                                  '🔄 DEBUG: Moving to Family Information Step...');
-                              print(
-                                  '🔄 DEBUG: ================================');
-
-                              setState(() => currentStep = 1);
-                            } else {
-                              print(
-                                  '❌ DEBUG: Form validation failed! Please check required fields');
-                            }
-                          },
-                          child: const Text('Next',
-                              style:
-                                  TextStyle(fontSize: 16, color: Colors.white)),
-                        ),
-                      ],
-                    ),
+                    // Action button moved to bottomNavigationBar
                   ] else if (currentStep == 1) ...[
                     // Updated Family Information Section
                     sectionTitle('Family Information'),
@@ -565,53 +504,37 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
 
                     // Add More button positioned after all family members
                     const SizedBox(height: 16),
-                    Center(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                        ),
-                        onPressed: () {
-                          _addFamilyMember();
-                          // Attach listeners for the new member
-                          _addFamilyMemberListeners(familyMembers.length - 1);
-                        },
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.add, color: Colors.white, size: 20),
-                            SizedBox(width: 8),
-                            Text('Add More Family Member',
-                                style: TextStyle(
-                                    color: Colors.white, fontSize: 16)),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            elevation: 0,
-                            backgroundColor: Colors.red,
+                            backgroundColor: Colors.blue,
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 40, vertical: 14),
+                                horizontal: 20, vertical: 10),
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
+                                borderRadius: BorderRadius.circular(8)),
                           ),
-                          onPressed: _submitForm,
-                          child: const Text('Next',
-                              style:
-                                  TextStyle(fontSize: 16, color: Colors.white)),
+                          onPressed: () {
+                            _addFamilyMember();
+                            // Attach listeners for the new member
+                            _addFamilyMemberListeners(familyMembers.length - 1);
+                          },
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.add, color: Colors.white, size: 20),
+                              SizedBox(width: 8),
+                              Text('Add More Family Member',
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 16)),
+                            ],
+                          ),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 140),
+                    // Action button moved to bottomNavigationBar
                   ]
                 ],
               ),
@@ -619,6 +542,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
           );
         },
       ),
+      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
@@ -667,7 +591,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
       return RichText(
         text: TextSpan(
           style: const TextStyle(
-            fontSize: 16,
+            fontSize: 12,
             fontWeight: FontWeight.w500,
             color: Colors.black87,
           ),
@@ -759,6 +683,56 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
       padding: const EdgeInsets.symmetric(vertical: 14.0),
       child: Text(title,
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  /// Bottom bar that shows the primary action button for the current step.
+  Widget _buildBottomNavigationBar() {
+    // Hide the bottom bar when the provider is busy or in error state
+    final provider = context.read<EmployeeProvider>();
+    if (provider.isLoading || provider.isError) {
+      return const SizedBox.shrink();
+    }
+    final String buttonText = currentStep == 0
+        ? 'Continue to Family Information'
+        : 'Continue to Education Details';
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () {
+              if (currentStep == 0) {
+                // Validate and move to the next step
+                print(
+                    '🎯 DEBUG: "Next" button (bottom bar) clicked - validating form...');
+                if (_formKey.currentState!.validate()) {
+                  print('✅ DEBUG: Form validation passed!');
+                  setState(() => currentStep = 1);
+                } else {
+                  print(
+                      '❌ DEBUG: Form validation failed! Please check required fields');
+                }
+              } else {
+                // Submit the form on the final step
+                _submitForm();
+              }
+            },
+            child: Text(
+              buttonText,
+              style: const TextStyle(fontSize: 16, color: Colors.white),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
