@@ -466,12 +466,6 @@ class _TaskListPageState extends State<TaskListPage> {
         backgroundColor: Colors.red,
         elevation: 1,
         iconTheme: const IconThemeData(color: Colors.black87),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            context.go('/home');
-          },
-        ),
         title: const Text(
           'TASK LIST',
           style: TextStyle(

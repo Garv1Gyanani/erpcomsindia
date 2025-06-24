@@ -145,21 +145,14 @@ class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
                     color: Colors.black,
                   ),
                 ),
-                IconButton(
-                  onPressed: _educationEntries.length > 1
-                      ? () => _removeEducationEntry(index)
-                      : null, // Disable button when only one entry
-                  icon: Icon(Icons.delete,
-                      color: _educationEntries.length > 1
-                          ? Colors.red[600]
-                          : Colors.grey[400], // Grey out when disabled
-                      size: 20),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  tooltip: _educationEntries.length <= 1
-                      ? 'Cannot delete the last education entry'
-                      : 'Delete this education entry',
-                ),
+                if (_educationEntries.length > 1)
+                  IconButton(
+                    onPressed: () => _removeEducationEntry(index),
+                    icon: Icon(Icons.delete, color: Colors.red[600], size: 20),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    tooltip: 'Delete this education entry',
+                  ),
               ],
             ),
             const SizedBox(height: 12),

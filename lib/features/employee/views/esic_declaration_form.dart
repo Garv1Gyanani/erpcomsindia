@@ -478,13 +478,14 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
                   color: AppColors.gray800,
                 ),
               ),
-              IconButton(
-                onPressed: () => _removeFamilyMember(index),
-                icon:
-                    const Icon(Icons.delete, color: AppColors.error, size: 20),
-                constraints: const BoxConstraints(),
-                padding: EdgeInsets.zero,
-              ),
+              if (familyMembers.length > 1)
+                IconButton(
+                  onPressed: () => _removeFamilyMember(index),
+                  icon: const Icon(Icons.delete,
+                      color: AppColors.error, size: 20),
+                  constraints: const BoxConstraints(),
+                  padding: EdgeInsets.zero,
+                ),
             ],
           ),
           const SizedBox(height: 12),
@@ -831,14 +832,16 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
           ),
           Expanded(
             flex: 1,
-            child: IconButton(
-              onPressed: () => _removeFamilyMember(index),
-              icon: const Icon(
-                Icons.delete,
-                color: AppColors.error,
-                size: 20,
-              ),
-            ),
+            child: familyMembers.length > 1
+                ? IconButton(
+                    onPressed: () => _removeFamilyMember(index),
+                    icon: const Icon(
+                      Icons.delete,
+                      color: AppColors.error,
+                      size: 20,
+                    ),
+                  )
+                : const SizedBox(),
           ),
         ],
       ),

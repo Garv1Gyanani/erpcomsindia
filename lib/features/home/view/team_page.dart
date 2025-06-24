@@ -19,13 +19,19 @@ class SupervisorHomePage extends StatefulWidget {
 class _SupervisorHomePageState extends State<SupervisorHomePage> {
   final AuthController _authController = getIt<AuthController>();
   final StorageService _storageService = getIt<StorageService>();
-  final TaskStatusController _taskStatusController = Get.put(TaskStatusController());
-  int _selectedIndex = 0;
+  final TaskStatusController _taskStatusController =
+      Get.put(TaskStatusController());
 
   final List<MenuItemData> _menuItems = [
     MenuItemData(
+      id: 2,
+      title: 'Employee List',
+      icon: Icons.people_alt,
+      color: Colors.green,
+    ),
+    MenuItemData(
       id: 1,
-      title: 'Attendance & Briefing',
+      title: 'Attendance',
       icon: MaterialCommunityIcons.account_group,
       color: Colors.blue,
     ),
@@ -67,7 +73,6 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
 
       _authController.token.value = 'test-token';
       _storageService.saveAuthData('test-token', testUser);
-      
     } catch (e) {
       print('Error creating test user: $e');
     }
@@ -81,10 +86,9 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
       body: Column(
         children: [
           _buildQuickStats(),
-          _buildMenuGrid(),
+          Expanded(child: _buildMenuGrid()),
         ],
       ),
-      bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 
@@ -176,13 +180,23 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
                   ),
                 );
               }),
-              _buildDrawerItem(Icons.person_add, 'Employee',onNavigate: (){
+              _buildDrawerItem(Icons.person_add, 'Employee', onNavigate: () {
                 context.goNamed('employees');
               }),
-              _buildDrawerItem(Icons.people, 'Team'),
-              _buildDrawerItem(Icons.assignment, 'Tasks'),
-              _buildDrawerItem(Icons.notification_important, 'Alerts'),
-              _buildDrawerItem(Icons.confirmation_number, 'Tickets'),
+              _buildDrawerItem(Icons.people, 'Team', onNavigate: () {
+                context.go('/team');
+              }),
+              _buildDrawerItem(Icons.assignment, 'Tasks', onNavigate: () {
+                context.go('/tasks');
+              }),
+              _buildDrawerItem(Icons.notification_important, 'Alerts',
+                  onNavigate: () {
+                context.go('/alerts');
+              }),
+              _buildDrawerItem(Icons.confirmation_number, 'Tickets',
+                  onNavigate: () {
+                context.go('/tickets');
+              }),
               _buildDrawerItem(Icons.history, 'History'),
               const Divider(),
               _buildDrawerItem(Icons.settings, 'Settings'),
@@ -196,10 +210,8 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
   }
 
 // Updated drawer item with navigation to tasks
-  Widget _buildDrawerItem(IconData icon, String title, {
-    bool isLogout = false, 
-    Function()? onNavigate
-  }) {
+  Widget _buildDrawerItem(IconData icon, String title,
+      {bool isLogout = false, Function()? onNavigate}) {
     return ListTile(
       dense: true,
       visualDensity: VisualDensity.compact,
@@ -224,9 +236,6 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
         } else if (onNavigate != null) {
           // Execute custom navigation function if provided
           onNavigate();
-        } else if (title == 'Tasks') {
-          // Default tasks navigation
-          context.goNamed('tasks');
         } else {
           // Handle other menu item taps
           print('Tapped on: $title');
@@ -451,131 +460,68 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
   }
 
   Widget _buildMenuGrid() {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            childAspectRatio: 0.9,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-          ),
-          itemCount: _menuItems.length,
-          itemBuilder: (context, index) {
-            final item = _menuItems[index];
-            return _buildMenuItem(item);
-          },
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          childAspectRatio: 0.9,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
         ),
+        itemCount: _menuItems.length,
+        itemBuilder: (context, index) {
+          final item = _menuItems[index];
+          return _buildMenuItem(item);
+        },
       ),
     );
   }
 
   Widget _buildMenuItem(MenuItemData item) {
-    return Column(
-      children: [
-        Container(
-          width: 64,
-          height: 64,
-          decoration: BoxDecoration(
-            color: item.color,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: item.color.withOpacity(0.3),
-                spreadRadius: 1,
-                blurRadius: 2,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Icon(
-            item.icon,
-            color: Colors.white,
-            size: 28,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          item.title,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBottomNavigation() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(
-            color: Colors.grey.shade300,
-            width: 1,
-          ),
-        ),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(0, MaterialCommunityIcons.account_group, 'Team'),
-          _buildNavItem(
-              1, MaterialCommunityIcons.clipboard_check_outline, 'Tasks'),
-          _buildNavItem(2, MaterialCommunityIcons.bell_outline, 'Alerts'),
-          _buildNavItem(3, MaterialCommunityIcons.ticket_outline, 'Tickets'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavItem(int index, IconData icon, String label) {
-    final bool isSelected = _selectedIndex == index;
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _selectedIndex = index;
-        });
-
-        // Navigate to tasks page when Tasks nav item is tapped
-        if (label == 'Tasks') {
-          context.goNamed('tasks');
+        // Handle navigation based on menu item
+        if (item.title == 'Employee List') {
+          context.goNamed('employees');
         }
-        // Add other navigation logic for other items as needed
+        // Add other menu item navigations here if needed
       },
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
-              color: isSelected
-                  ? Theme.of(context).primaryColor
-                  : Colors.transparent,
-              shape: BoxShape.circle,
+              color: item.color,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: item.color.withOpacity(0.3),
+                  spreadRadius: 1,
+                  blurRadius: 2,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Icon(
-              icon,
-              color: isSelected ? Colors.white : Colors.grey.shade600,
-              size: 24,
+              item.icon,
+              color: Colors.white,
+              size: 28,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
-            label,
-            style: TextStyle(
-              color: isSelected
-                  ? Theme.of(context).primaryColor
-                  : Colors.grey.shade600,
+            item.title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
               fontSize: 12,
-              fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+              fontWeight: FontWeight.w500,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

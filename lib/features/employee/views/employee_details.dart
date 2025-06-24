@@ -211,7 +211,11 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
           const SizedBox(height: 20),
           _buildBasicInfoSection(),
           const SizedBox(height: 16),
-          _buildDocumentImagesSection(),
+          _buildFamilyMembersSection(),
+          const SizedBox(height: 16),
+          _buildPreviousEmploymentSection(),
+          const SizedBox(height: 16),
+          _buildEmploymentSection(),
           const SizedBox(height: 16),
           _buildContactSection(),
           const SizedBox(height: 16),
@@ -219,17 +223,14 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
           const SizedBox(height: 16),
           _buildEducationSection(),
           const SizedBox(height: 16),
-          _buildDocumentsSection(),
+          _buildDocumentsWithDataSection(),
           const SizedBox(height: 16),
-          _buildBankDetailsSection(),
-          const SizedBox(height: 16),
-          _buildEmploymentSection(),
-          const SizedBox(height: 16),
-          _buildPreviousEmploymentSection(),
           const SizedBox(height: 16),
           _buildEPFSection(),
           const SizedBox(height: 16),
           _buildESICSection(),
+          const SizedBox(height: 16),
+          _buildRemarksSection(),
         ],
       ),
     );
@@ -306,10 +307,15 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
   }
 
   Widget _buildContactSection() {
-    return _buildSection('Emergency Contact', [
+    final user = _employeeData!['user'] ?? {};
+
+    return _buildSection('Contact Information', [
+      _buildDetailRow('Mobile Number', user['phone']),
+      _buildDetailRow('Email', user['email']),
       _buildDetailRow('Contact Person', _employeeData!['contactPersionName']),
       _buildDetailRow('Emergency Contact', _employeeData!['emergency_contact']),
-      _buildDetailRow('Relation', _employeeData!['emergency_contact_relation']),
+      _buildDetailRow('Relationship with Emergency Contact',
+          _employeeData!['emergency_contact_relation']),
     ]);
   }
 
@@ -387,27 +393,416 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
     ]);
   }
 
-  Widget _buildDocumentsSection() {
-    return _buildSection('Documents', [
-      _buildDetailRow('Aadhar Number', _employeeData!['aadhar']),
-      _buildDetailRow('PAN Number', _employeeData!['pan']),
-      _buildDetailRow('Passport Number', _employeeData!['passport_number']),
-      _buildDetailRow(
-          'Passport Valid From', _employeeData!['passport_valid_from']),
-      _buildDetailRow('Passport Valid To', _employeeData!['passport_valid_to']),
-    ]);
+  Widget _buildDocumentsWithDataSection() {
+    return Column(
+      children: [
+        _buildAadharDocumentCard(),
+        const SizedBox(height: 16),
+        _buildPANDocumentCard(),
+        const SizedBox(height: 16),
+        _buildBankDocumentCard(),
+        const SizedBox(height: 16),
+        _buildSignatureDocumentCard(),
+        const SizedBox(height: 16),
+        _buildOtherDocumentsCard(),
+      ],
+    );
   }
 
-  Widget _buildBankDetailsSection() {
-    return _buildSection('Bank Details', [
-      _buildDetailRow('Bank Name', _employeeData!['bank_name']),
-      _buildDetailRow('Account Number', _employeeData!['bank_account']),
-      _buildDetailRow('IFSC Code', _employeeData!['ifsc_code']),
-      _buildDetailRow('Account Verified',
-          _employeeData!['bank_account_verified'] == 1 ? 'Yes' : 'No'),
-      _buildDetailRow('IFSC Verified',
-          _employeeData!['ifsc_code_verified'] == 1 ? 'Yes' : 'No'),
-    ]);
+  Widget _buildAadharDocumentCard() {
+    return Card(
+      elevation: 3,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.credit_card, color: Colors.red, size: 24),
+                const SizedBox(width: 8),
+                const Text(
+                  'Aadhar Card Details',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(),
+            _buildDetailRow('Aadhar Number', _employeeData!['aadhar']),
+            const SizedBox(height: 16),
+            const Text(
+              'Document Images:',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+            Column(
+              children: [
+                _buildDocumentImageCard(
+                  'Aadhar Front',
+                  _employeeData!['aadhar_front_path'],
+                ),
+                const SizedBox(height: 12),
+                _buildDocumentImageCard(
+                  'Aadhar Back',
+                  _employeeData!['aadhar_back_path'],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPANDocumentCard() {
+    return Card(
+      elevation: 3,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.account_balance_wallet, color: Colors.red, size: 24),
+                const SizedBox(width: 8),
+                const Text(
+                  'PAN Card Details',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(),
+            _buildDetailRow('PAN Number', _employeeData!['pan']),
+            const SizedBox(height: 16),
+            const Text(
+              'Document Image:',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+            _buildDocumentImageCard(
+              'PAN Card',
+              _employeeData!['pan_file_path'],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPassportDocumentCard() {
+    return Card(
+      elevation: 3,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.travel_explore, color: Colors.red, size: 24),
+                const SizedBox(width: 8),
+                const Text(
+                  'Passport Details',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(),
+            _buildDetailRow(
+                'Passport Number', _employeeData!['passport_number']),
+            _buildDetailRow(
+                'Valid From', _employeeData!['passport_valid_from']),
+            _buildDetailRow('Valid To', _employeeData!['passport_valid_to']),
+            if (_employeeData!['passport_number'] == null ||
+                _employeeData!['passport_number'].toString().isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  'No passport information available',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBankDocumentCard() {
+    return Card(
+      elevation: 3,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.account_balance, color: Colors.red, size: 24),
+                const SizedBox(width: 8),
+                const Text(
+                  'Bank Document',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(),
+            const Text(
+              'Bank Details:',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 8),
+            _buildDetailRow('Bank Name', _employeeData!['bank_name']),
+            _buildDetailRow('Account Number', _employeeData!['bank_account']),
+            _buildDetailRow('IFSC Code', _employeeData!['ifsc_code']),
+            _buildDetailRow('Account Verified',
+                _employeeData!['bank_account_verified'] == 1 ? 'Yes' : 'No'),
+            _buildDetailRow('IFSC Verified',
+                _employeeData!['ifsc_code_verified'] == 1 ? 'Yes' : 'No'),
+            const SizedBox(height: 16),
+            const Text(
+              'Bank Document Image:',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+            _buildDocumentImageCard(
+              'Bank Document',
+              _employeeData!['bank_document_path'],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSignatureDocumentCard() {
+    return Card(
+      elevation: 3,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.draw, color: Colors.red, size: 24),
+                const SizedBox(width: 8),
+                const Text(
+                  'Employee Signature',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(),
+            const Text(
+              'Signature Image:',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+            _buildDocumentImageCard(
+              'Employee Signature',
+              _employeeData!['signature_thumb_path'],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOtherDocumentsCard() {
+    // Parse other documents
+    List<dynamic> otherDocuments = [];
+    try {
+      if (_employeeData!['otherDocuments'] != null) {
+        otherDocuments = json.decode(_employeeData!['otherDocuments']);
+      }
+    } catch (e) {
+      print('Error parsing other documents: $e');
+    }
+
+    return Card(
+      elevation: 3,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.folder_open, color: Colors.red, size: 24),
+                const SizedBox(width: 8),
+                const Text(
+                  'Other Documents',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(),
+            if (otherDocuments.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  'No other documents available',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              )
+            else
+              ...otherDocuments.asMap().entries.map((entry) {
+                final index = entry.key;
+                final document = entry.value;
+                final documentName = document['name'] ?? 'Unknown Document';
+                final filePath = document['file_path'];
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Document ${index + 1}: $documentName',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      if (filePath != null && filePath.isNotEmpty)
+                        _buildDocumentImageCard(
+                          documentName,
+                          filePath,
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.description,
+                                color: Colors.grey.shade600,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  '$documentName - File not available',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDocumentImageCard(String title, String? imagePath) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+        color: Colors.grey.shade50,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+              color: Colors.black87,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: () {
+              if (imagePath != null && imagePath.isNotEmpty) {
+                _showFullScreenImage('https://erp.comsindia.in/$imagePath');
+              }
+            },
+            child: Container(
+              width: double.infinity,
+              height: 120,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(5),
+                child: _buildDocumentPreview(imagePath),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            imagePath != null && imagePath.isNotEmpty
+                ? 'Available - Tap to view'
+                : 'Not Available',
+            style: TextStyle(
+              fontSize: 12,
+              color: imagePath != null && imagePath.isNotEmpty
+                  ? Colors.green
+                  : Colors.red,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildEmploymentSection() {
@@ -488,9 +883,21 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
           'Scheme Certificate', _employeeData!['scheme_certificate']),
       _buildDetailRow('PPO', _employeeData!['ppo']),
       const SizedBox(height: 16),
+
+      // Witness Details
+      const Text('Witness Details:',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+      const SizedBox(height: 8),
+      _buildWitnessCard('Witness 1', _employeeData!['witness_1_name'],
+          _employeeData!['witness_1_signature_path']),
+      const SizedBox(height: 12),
+      _buildWitnessCard('Witness 2', _employeeData!['witness_2_name'],
+          _employeeData!['witness_2_signature_path']),
+      const SizedBox(height: 16),
+
       if (epfNominees.isNotEmpty) ...[
         const Text('EPF Nominees:',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
         const SizedBox(height: 8),
         ...epfNominees.asMap().entries.map((entry) {
           final index = entry.key;
@@ -505,6 +912,29 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
               _buildDetailRow('Share', nominee['share']),
               _buildDetailRow('Date of Birth', nominee['dob']),
               _buildDetailRow('Address', nominee['address']),
+              if (nominee['guardian'] != null)
+                _buildDetailRow('Guardian', nominee['guardian']),
+              const SizedBox(height: 8),
+            ],
+          );
+        }).toList(),
+      ],
+
+      if (epsFamilyMembers.isNotEmpty) ...[
+        const Text('EPS Family Members:',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+        const SizedBox(height: 8),
+        ...epsFamilyMembers.asMap().entries.map((entry) {
+          final index = entry.key;
+          final member = entry.value;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('EPS Member ${index + 1}:',
+                  style: const TextStyle(fontWeight: FontWeight.w500)),
+              _buildDetailRow('Name', member['name']),
+              _buildDetailRow('Age', member['age']),
+              _buildDetailRow('Relationship', member['relationship']),
               const SizedBox(height: 8),
             ],
           );
@@ -535,7 +965,7 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
       const SizedBox(height: 16),
       if (familyMembers.isNotEmpty) ...[
         const Text('Family Members:',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
         const SizedBox(height: 8),
         ...familyMembers.asMap().entries.map((entry) {
           final index = entry.key;
@@ -659,142 +1089,6 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
     );
   }
 
-  Widget _buildDocumentImagesSection() {
-    return _buildSection('Document Images', [
-      // Aadhar Documents
-      _buildDocumentLineItem(
-        'Aadhar Front',
-        _employeeData!['aadhar_front_path'],
-        Icons.credit_card,
-      ),
-      const SizedBox(height: 12),
-      _buildDocumentLineItem(
-        'Aadhar Back',
-        _employeeData!['aadhar_back_path'],
-        Icons.credit_card,
-      ),
-      const SizedBox(height: 12),
-
-      // PAN Card
-      _buildDocumentLineItem(
-        'PAN Card',
-        _employeeData!['pan_file_path'],
-        Icons.account_balance_wallet,
-      ),
-      const SizedBox(height: 12),
-
-      // Bank Document
-      _buildDocumentLineItem(
-        'Bank Document',
-        _employeeData!['bank_document_path'],
-        Icons.account_balance,
-      ),
-      const SizedBox(height: 12),
-
-      // Employee Signature
-      _buildDocumentLineItem(
-        'Employee Signature',
-        _employeeData!['signature_thumb_path'],
-        Icons.draw,
-      ),
-      const SizedBox(height: 12),
-
-      // Witness Signatures
-      _buildDocumentLineItem(
-        'Witness 1 Signature',
-        _employeeData!['witness_1_signature_path'],
-        Icons.edit,
-      ),
-      const SizedBox(height: 12),
-      _buildDocumentLineItem(
-        'Witness 2 Signature',
-        _employeeData!['witness_2_signature_path'],
-        Icons.edit,
-      ),
-    ]);
-  }
-
-  Widget _buildDocumentLineItem(
-      String title, String? imagePath, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
-        color: Colors.grey.shade50,
-      ),
-      child: Row(
-        children: [
-          // Document Icon
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.red.shade100,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              color: Colors.red,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-
-          // Document Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  imagePath != null && imagePath.isNotEmpty
-                      ? 'Document Available'
-                      : 'Not Available',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: imagePath != null && imagePath.isNotEmpty
-                        ? Colors.green
-                        : Colors.red,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Document Preview
-          GestureDetector(
-            onTap: () {
-              if (imagePath != null && imagePath.isNotEmpty) {
-                _showFullScreenImage('https://erp.comsindia.in/$imagePath');
-              }
-            },
-            child: Container(
-              width: 80,
-              height: 60,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(5),
-                child: _buildDocumentPreview(imagePath),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildDocumentPreview(String? imagePath) {
     if (imagePath == null || imagePath.isEmpty) {
       return Container(
@@ -901,5 +1195,248 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
         ),
       ),
     );
+  }
+
+  Widget _buildWitnessCard(
+      String witnessTitle, String? witnessName, String? signaturePath) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          // Witness Information
+          Expanded(
+            flex: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  witnessTitle,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Name: ${witnessName ?? 'N/A'}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  signaturePath != null &&
+                          signaturePath.isNotEmpty &&
+                          signaturePath != '0'
+                      ? 'Signature Available'
+                      : 'Signature Not Available',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: signaturePath != null &&
+                            signaturePath.isNotEmpty &&
+                            signaturePath != '0'
+                        ? Colors.green
+                        : Colors.red,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Signature Preview
+          Expanded(
+            flex: 1,
+            child: GestureDetector(
+              onTap: () {
+                if (signaturePath != null &&
+                    signaturePath.isNotEmpty &&
+                    signaturePath != '0') {
+                  _showFullScreenImage(
+                      'https://erp.comsindia.in/$signaturePath');
+                }
+              },
+              child: Container(
+                height: 80,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(5),
+                  child: _buildSignaturePreview(signaturePath),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSignaturePreview(String? signaturePath) {
+    if (signaturePath == null ||
+        signaturePath.isEmpty ||
+        signaturePath == '0') {
+      return Container(
+        color: Colors.grey.shade200,
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.draw,
+                size: 24,
+                color: Colors.grey,
+              ),
+              SizedBox(height: 4),
+              Text(
+                'No Signature',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final imageUrl = 'https://erp.comsindia.in/$signaturePath';
+
+    return Image.network(
+      imageUrl,
+      fit: BoxFit.contain,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Container(
+          child: const Center(
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          color: Colors.grey.shade200,
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.error_outline,
+                  size: 24,
+                  color: Colors.red,
+                ),
+                SizedBox(height: 4),
+                Text(
+                  'Failed to Load',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.red,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFamilyMembersSection() {
+    // Parse family member data
+    List<dynamic> familyMemberNames = [];
+    List<dynamic> relations = [];
+    List<dynamic> occupations = [];
+    List<dynamic> dobs = [];
+
+    try {
+      if (_employeeData!['FamilyMembername'] != null) {
+        familyMemberNames = json.decode(_employeeData!['FamilyMembername']);
+      }
+      if (_employeeData!['relation'] != null) {
+        relations = json.decode(_employeeData!['relation']);
+      }
+      if (_employeeData!['occupation'] != null) {
+        occupations = json.decode(_employeeData!['occupation']);
+      }
+      if (_employeeData!['dob'] != null) {
+        dobs = json.decode(_employeeData!['dob']);
+      }
+    } catch (e) {
+      print('Error parsing family member data: $e');
+    }
+
+    // Find the maximum length to handle cases where arrays might have different lengths
+    final maxLength = [
+      familyMemberNames.length,
+      relations.length,
+      occupations.length,
+      dobs.length
+    ].reduce((a, b) => a > b ? a : b);
+
+    if (maxLength == 0) {
+      return _buildSection('Family Members', [
+        const Text('No family member information available'),
+      ]);
+    }
+
+    return _buildSection('Family Members', [
+      ...List.generate(maxLength, (index) {
+        final memberName =
+            index < familyMemberNames.length ? familyMemberNames[index] : 'N/A';
+        final relation = index < relations.length ? relations[index] : 'N/A';
+        final occupation =
+            index < occupations.length ? occupations[index] : 'N/A';
+        final dob = index < dobs.length ? dobs[index] : 'N/A';
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Family Member ${index + 1}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.red,
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildDetailRow('Name', memberName),
+              _buildDetailRow('Relation', relation),
+              _buildDetailRow('Occupation', occupation),
+              _buildDetailRow('Date of Birth', dob),
+            ],
+          ),
+        );
+      }).toList(),
+    ]);
+  }
+
+  Widget _buildRemarksSection() {
+    final remarks = _employeeData!['remarks'];
+
+    return _buildSection('Remarks', [
+      _buildDetailRow('Remarks', remarks ?? 'No remarks available'),
+    ]);
   }
 }

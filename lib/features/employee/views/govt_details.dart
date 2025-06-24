@@ -470,9 +470,9 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.attach_file,
-                        color: Colors.orange, size: 20),
+                        color: Colors.orange, size: 10),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   const Text(
                     'Other Documents',
                     style: TextStyle(
@@ -495,7 +495,7 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
                 ),
                 child: const Text(
                   '+ Add Document',
-                  style: TextStyle(color: Colors.white, fontSize: 12),
+                  style: TextStyle(color: Colors.white, fontSize: 10),
                 ),
               ),
             ],
@@ -550,7 +550,7 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
           Row(
             children: [
               Expanded(
-                flex: 2,
+                flex: 3,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -589,9 +589,9 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               Expanded(
-                flex: 2,
+                flex: 3,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -618,15 +618,15 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
+                                  horizontal: 6, vertical: 4),
                               decoration: BoxDecoration(
                                 color: Colors.grey.shade200,
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: const Text('Choose File',
-                                  style: TextStyle(fontSize: 12)),
+                              child: const Text('Choose',
+                                  style: TextStyle(fontSize: 11)),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 6),
                             Expanded(
                               child: Text(
                                 document.file != null
@@ -636,7 +636,7 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
                                   color: document.file != null
                                       ? Colors.green
                                       : Colors.grey.shade600,
-                                  fontSize: 12,
+                                  fontSize: 11,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -649,9 +649,15 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
                 ),
               ),
               if (otherDocuments.length > 1)
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.red),
-                  onPressed: () => _removeOtherDocument(index),
+                Padding(
+                  padding: const EdgeInsets.only(left: 4.0),
+                  child: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.red, size: 18),
+                    onPressed: () => _removeOtherDocument(index),
+                    padding: EdgeInsets.zero,
+                    constraints:
+                        const BoxConstraints(minWidth: 32, minHeight: 32),
+                  ),
                 ),
             ],
           ),

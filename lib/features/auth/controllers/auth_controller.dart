@@ -155,7 +155,8 @@ class AuthController extends GetxController {
           // Update user roles
           if (roles.isNotEmpty) {
             user.roles.clear();
-            user.roles.addAll(roles.map((role) => RoleModel(id: 1, name: role, guardName: role)));
+            user.roles.addAll(roles
+                .map((role) => RoleModel(id: 1, name: role, guardName: role)));
           }
 
           // Save to memory
@@ -171,9 +172,9 @@ class AuthController extends GetxController {
 
           isLoading.value = false;
 
-          // Navigate to home
+          // Navigate to team (which has bottom navigation)
           if (context.mounted) {
-            context.go('/home');
+            context.go('/team');
           }
 
           return true;

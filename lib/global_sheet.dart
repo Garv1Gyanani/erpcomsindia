@@ -20,11 +20,15 @@ class _GlobalBottomNavigationState extends State<GlobalBottomNavigation> {
   int _selectedIndex = 0;
 
   final List<NavigationItem> _navigationItems = [
-    
     NavigationItem(
       icon: MaterialCommunityIcons.account_group,
       label: 'Team',
       route: '/team',
+    ),
+    NavigationItem(
+      icon: MaterialCommunityIcons.account_multiple,
+      label: 'Employees',
+      route: '/employees',
     ),
     NavigationItem(
       icon: MaterialCommunityIcons.clipboard_check_outline,
@@ -71,20 +75,14 @@ class _GlobalBottomNavigationState extends State<GlobalBottomNavigation> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
+      body: Column(
         children: [
-          // Main content
-          Positioned.fill(
-            bottom: 80, // Leave space for bottom navigation
+          // Main content - takes up remaining space
+          Expanded(
             child: widget.child,
           ),
           // Fixed bottom navigation
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: _buildBottomNavigation(),
-          ),
+          _buildBottomNavigation(),
         ],
       ),
     );
@@ -92,7 +90,6 @@ class _GlobalBottomNavigationState extends State<GlobalBottomNavigation> {
 
   Widget _buildBottomNavigation() {
     return Container(
-      height: 80,
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -108,15 +105,18 @@ class _GlobalBottomNavigationState extends State<GlobalBottomNavigation> {
           topRight: Radius.circular(20),
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: _navigationItems.asMap().entries.map((entry) {
-            final index = entry.key;
-            final item = entry.value;
-            return _buildNavItem(index, item);
-          }).toList(),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: _navigationItems.asMap().entries.map((entry) {
+              final index = entry.key;
+              final item = entry.value;
+              return _buildNavItem(index, item);
+            }).toList(),
+          ),
         ),
       ),
     );
@@ -124,7 +124,7 @@ class _GlobalBottomNavigationState extends State<GlobalBottomNavigation> {
 
   Widget _buildNavItem(int index, NavigationItem item) {
     final bool isSelected = _selectedIndex == index;
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {

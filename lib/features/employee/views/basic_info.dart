@@ -706,8 +706,8 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-              shape:
-                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () {
               if (currentStep == 0) {

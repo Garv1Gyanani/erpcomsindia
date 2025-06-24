@@ -185,9 +185,6 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.red,
-        leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => context.goNamed("home")),
         title: const Text('Employee List',
             style: TextStyle(color: Colors.white, fontSize: 18)),
         actions: [
@@ -295,7 +292,8 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
             elevation: 3,
             margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               leading: emp['image_url'] != null
                   ? CircleAvatar(
                       backgroundColor: emp['color'] ?? Colors.blue,
@@ -366,7 +364,8 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: emp['color'] ?? Colors.grey,
                       borderRadius: BorderRadius.circular(12),
