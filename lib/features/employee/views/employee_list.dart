@@ -92,9 +92,22 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
           _isLoading = false;
         });
       } else {
+        // Try to parse the error message from the API response
+        String errorMessage =
+            'Failed to load employees. Status: ${response.statusCode}';
+        try {
+          final responseData = json.decode(response.body);
+          if (responseData is Map<String, dynamic> &&
+              responseData.containsKey('message')) {
+            errorMessage = responseData['message'];
+          }
+        } catch (e) {
+          print('Error parsing error response: $e');
+          // Keep the default message if parsing fails
+        }
+
         setState(() {
-          _errorMessage =
-              'Failed to load employees. Status: ${response.statusCode}';
+          _errorMessage = errorMessage;
           _isLoading = false;
         });
       }

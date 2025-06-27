@@ -256,7 +256,7 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Supervisor App',
+            'ERP COMS INDIA',
             style: TextStyle(
               color: Colors.white,
               fontSize: 20,
@@ -264,14 +264,28 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
             ),
           ),
           // Display user role below the app title - reactive with Obx
-          Text(
-            "Supervisor",
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
-              fontWeight: FontWeight.normal,
-            ),
-          ),
+          Obx(() {
+            final user = _authController.currentUser.value;
+            String userRole = 'User'; // Default role
+
+            if (user != null && user.roles != null && user.roles!.isNotEmpty) {
+              final roleName = user.roles!.first.name;
+              if (roleName != null && roleName.isNotEmpty) {
+                // Capitalize first letter of role name
+                userRole = roleName[0].toUpperCase() +
+                    roleName.substring(1).toLowerCase();
+              }
+            }
+
+            return Text(
+              userRole,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 14,
+                fontWeight: FontWeight.normal,
+              ),
+            );
+          }),
         ],
       ),
       actions: [

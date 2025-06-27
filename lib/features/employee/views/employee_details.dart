@@ -4,6 +4,11 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:coms_india/core/services/storage_service.dart';
 import 'package:coms_india/features/employee/views/employee_edit.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/services.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class EmployeeDetailsPage extends StatefulWidget {
   final int userId;
@@ -228,7 +233,11 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
           const SizedBox(height: 16),
           _buildEPFSection(),
           const SizedBox(height: 16),
+          _buildEPSSection(),
+          const SizedBox(height: 16),
           _buildESICSection(),
+          const SizedBox(height: 16),
+          _buildEPFOSection(),
           const SizedBox(height: 16),
           _buildRemarksSection(),
         ],
@@ -705,7 +714,7 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
                       ),
                       const SizedBox(height: 8),
                       if (filePath != null && filePath.isNotEmpty)
-                        _buildDocumentImageCard(
+                        _buildOtherDocumentCard(
                           documentName,
                           filePath,
                         )
@@ -743,6 +752,348 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
               }).toList(),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _openPdfDocument(String pdfUrl, String title) async {
+    try {
+      // Show dialog with options
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.picture_as_pdf, color: Colors.red),
+                SizedBox(width: 8),
+                Expanded(child: Text(title)),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Choose how to open the PDF document:'),
+                SizedBox(height: 16),
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    pdfUrl,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('Cancel'),
+              ),
+              // TextButton(
+              //   onPressed: () async {
+              //     Navigator.of(context).pop();
+              //     await _downloadPdf(pdfUrl, title);
+              //   },
+              //   style: TextButton.styleFrom(
+              //     foregroundColor: Colors.orange,
+              //   ),
+              //   child: Row(
+              //     mainAxisSize: MainAxisSize.min,
+              //     children: [
+              //       Icon(Icons.download, size: 16),
+              //       SizedBox(width: 4),
+              //       Text('Download'),
+              //     ],
+              //   ),
+              // ),
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+
+                  // Show loading state
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Row(
+                        children: [
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Text('Opening PDF...'),
+                        ],
+                      ),
+                      backgroundColor: Colors.blue,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+
+                  await _launchPdfUrl(pdfUrl);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: Text('Open PDF'),
+              ),
+            ],
+          );
+        },
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to open PDF: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _launchPdfUrl(String url) async {
+    print('🔗 Attempting to open URL: $url');
+
+    // Validate URL format
+    if (url.isEmpty) {
+      _showUrlError('URL is empty', url);
+      return;
+    }
+
+    // Ensure URL has proper scheme
+    String validUrl = url;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      validUrl = 'https://$url';
+      print('🔧 Fixed URL scheme: $validUrl');
+    }
+
+    // Always copy to clipboard first as reliable fallback
+    await Clipboard.setData(ClipboardData(text: validUrl));
+
+    // Try simple approach first
+    try {
+      final Uri uri = Uri.parse(validUrl);
+      print('📋 Parsed URI: $uri');
+
+      // Try the most basic launch first
+      await launchUrl(uri);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('PDF opened successfully!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      print('✅ PDF launched successfully');
+    } catch (e) {
+      print('❌ Basic launch failed: $e');
+
+      // Try with explicit external mode
+      try {
+        final Uri uri = Uri.parse(validUrl);
+        await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF opened in external app!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        print('✅ PDF launched in external app');
+      } catch (e2) {
+        print('❌ External launch failed: $e2');
+
+        // Ultimate fallback: Show URL to user
+        _showUrlFallback(validUrl);
+      }
+    }
+  }
+
+  void _showUrlError(String error, String url) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error: $error'),
+        backgroundColor: Colors.red,
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+
+  void _showUrlFallback(String url) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.info_outline, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('PDF URL'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+                'Cannot open PDF directly. Please copy the URL and open it in your browser:'),
+            SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: SelectableText(
+                url,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'URL has been copied to your clipboard',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.green,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Close'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: url));
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('URL copied again to clipboard'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+            child: Text('Copy Again'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOtherDocumentCard(String title, String? filePath) {
+    final String fullUrl = filePath != null && filePath.isNotEmpty
+        ? 'https://erp.comsindia.in/$filePath'
+        : '';
+
+    // Debug: Print the URL being generated
+    if (fullUrl.isNotEmpty) {
+      print('🔍 Generated URL for $title: $fullUrl');
+    }
+
+    // Check if it's a PDF file
+    final bool isPdf = filePath?.toLowerCase().endsWith('.pdf') ?? false;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(8),
+        color: Colors.grey.shade50,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+              color: Colors.black87,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: () {
+              if (fullUrl.isNotEmpty) {
+                if (isPdf) {
+                  // For PDF files, you might want to open in a web view or external app
+                  _openPdfDocument(fullUrl, title);
+                } else {
+                  // For image files, show full screen
+                  _showFullScreenImage(fullUrl);
+                }
+              }
+            },
+            child: Container(
+              width: double.infinity,
+              height: 120,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey.shade300),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(5),
+                child: isPdf
+                    ? Container(
+                        color: Colors.red.shade50,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.picture_as_pdf,
+                              size: 48,
+                              color: Colors.red.shade400,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'PDF Document',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.red.shade600,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : _buildDocumentPreview(filePath),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            fullUrl.isNotEmpty
+                ? isPdf
+                    ? 'PDF Available - Tap to open'
+                    : 'Available - Tap to view'
+                : 'Not Available',
+            style: TextStyle(
+              fontSize: 12,
+              color: fullUrl.isNotEmpty ? Colors.green : Colors.red,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -858,47 +1209,92 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
     ]);
   }
 
+  Widget _buildEPSSection() {
+    // Parse EPS family members
+    List<dynamic> epsFamilyMembers = [];
+    try {
+      if (_employeeData!['eps_family_members'] != null) {
+        epsFamilyMembers = json.decode(_employeeData!['eps_family_members']);
+      }
+    } catch (e) {
+      print('Error parsing EPS family members: $e');
+    }
+
+    return _buildSection('EPS Details', [
+      if (epsFamilyMembers.isNotEmpty) ...[
+        ...epsFamilyMembers.asMap().entries.map((entry) {
+          final index = entry.key;
+          final member = entry.value;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Family Member ${index + 1}:',
+                  style: const TextStyle(fontWeight: FontWeight.w500)),
+              _buildDetailRow('Name', member['name']),
+              _buildDetailRow('Relationship', member['relationship']),
+              _buildDetailRow('Age', member['age']),
+              const SizedBox(height: 8),
+            ],
+          );
+        }).toList(),
+      ] else ...[
+        const Text('No EPS family members available',
+            style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
+      ],
+      const SizedBox(height: 16),
+      const Text('Witnesses:',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+      const SizedBox(height: 8),
+      if (_employeeData!['witness_1_name'] != null)
+        _buildDetailRow('Witness 1 Name', _employeeData!['witness_1_name']),
+      if (_employeeData!['witness_1_signature_path'] != null) ...[
+        const Text('Witness 1 Signature:',
+            style: TextStyle(fontWeight: FontWeight.w500)),
+        const SizedBox(height: 4),
+        Image.network(
+          'https://erp.comsindia.in/${_employeeData!['witness_1_signature_path']}',
+          height: 100,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            return const Text('Failed to load signature',
+                style: TextStyle(color: Colors.red));
+          },
+        ),
+        const SizedBox(height: 8),
+      ],
+      if (_employeeData!['witness_2_name'] != null)
+        _buildDetailRow('Witness 2 Name', _employeeData!['witness_2_name']),
+      if (_employeeData!['witness_2_signature_path'] != null) ...[
+        const Text('Witness 2 Signature:',
+            style: TextStyle(fontWeight: FontWeight.w500)),
+        const SizedBox(height: 4),
+        Image.network(
+          'https://erp.comsindia.in/${_employeeData!['witness_2_signature_path']}',
+          height: 100,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            return const Text('Failed to load signature',
+                style: TextStyle(color: Colors.red));
+          },
+        ),
+        const SizedBox(height: 8),
+      ],
+    ]);
+  }
+
   Widget _buildEPFSection() {
     // Parse EPF nominees
     List<dynamic> epfNominees = [];
-    List<dynamic> epsFamilyMembers = [];
     try {
       if (_employeeData!['epf_nominees'] != null) {
         epfNominees = json.decode(_employeeData!['epf_nominees']);
-      }
-      if (_employeeData!['eps_family_members'] != null) {
-        epsFamilyMembers = json.decode(_employeeData!['eps_family_members']);
       }
     } catch (e) {
       print('Error parsing EPF data: $e');
     }
 
-    return _buildSection('EPF/EPS Details', [
-      _buildDetailRow('PF Member', _employeeData!['pf_member']),
-      _buildDetailRow('Pension Member', _employeeData!['pension_member']),
-      _buildDetailRow('UAN Number', _employeeData!['uan_number']),
-      _buildDetailRow(
-          'Previous PF Number', _employeeData!['previous_pf_number']),
-      _buildDetailRow(
-          'Scheme Certificate', _employeeData!['scheme_certificate']),
-      _buildDetailRow('PPO', _employeeData!['ppo']),
-      const SizedBox(height: 16),
-
-      // Witness Details
-      const Text('Witness Details:',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
-      const SizedBox(height: 8),
-      _buildWitnessCard('Witness 1', _employeeData!['witness_1_name'],
-          _employeeData!['witness_1_signature_path']),
-      const SizedBox(height: 12),
-      _buildWitnessCard('Witness 2', _employeeData!['witness_2_name'],
-          _employeeData!['witness_2_signature_path']),
-      const SizedBox(height: 16),
-
+    return _buildSection('EPF Details', [
       if (epfNominees.isNotEmpty) ...[
-        const Text('EPF Nominees:',
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
-        const SizedBox(height: 8),
         ...epfNominees.asMap().entries.map((entry) {
           final index = entry.key;
           final nominee = entry.value;
@@ -918,27 +1314,9 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
             ],
           );
         }).toList(),
-      ],
-
-      if (epsFamilyMembers.isNotEmpty) ...[
-        const Text('EPS Family Members:',
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
-        const SizedBox(height: 8),
-        ...epsFamilyMembers.asMap().entries.map((entry) {
-          final index = entry.key;
-          final member = entry.value;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('EPS Member ${index + 1}:',
-                  style: const TextStyle(fontWeight: FontWeight.w500)),
-              _buildDetailRow('Name', member['name']),
-              _buildDetailRow('Age', member['age']),
-              _buildDetailRow('Relationship', member['relationship']),
-              const SizedBox(height: 8),
-            ],
-          );
-        }).toList(),
+      ] else ...[
+        const Text('No EPF nominees available',
+            style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
       ],
     ]);
   }
@@ -1432,11 +1810,190 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
     ]);
   }
 
+  Widget _buildEPFOSection() {
+    return _buildSection('EPFO Details', [
+      _buildDetailRow('PF Member', _employeeData!['pf_member'] ?? 'N/A'),
+      _buildDetailRow(
+          'Pension Member', _employeeData!['pension_member'] ?? 'N/A'),
+      _buildDetailRow('UAN Number', _employeeData!['uan_number'] ?? 'N/A'),
+      _buildDetailRow(
+          'Previous PF Number', _employeeData!['previous_pf_number'] ?? 'N/A'),
+      _buildDetailRow('Exit Date', _employeeData!['exit_date'] ?? 'N/A'),
+      _buildDetailRow(
+          'Scheme Certificate', _employeeData!['scheme_certificate'] ?? 'N/A'),
+      _buildDetailRow('PPO', _employeeData!['ppo'] ?? 'N/A'),
+      const SizedBox(height: 16),
+      const Text('International Worker Details:',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+      const SizedBox(height: 8),
+      _buildDetailRow('International Worker',
+          _employeeData!['international_worker'] ?? 'N/A'),
+      _buildDetailRow(
+          'Country of Origin', _employeeData!['country_origin'] ?? 'N/A'),
+      const SizedBox(height: 16),
+      const Text('Passport Information:',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+      const SizedBox(height: 8),
+      _buildDetailRow(
+          'Passport Number', _employeeData!['passport_number'] ?? 'N/A'),
+      _buildDetailRow('Passport Valid From',
+          _employeeData!['passport_valid_from'] ?? 'N/A'),
+      _buildDetailRow(
+          'Passport Valid To', _employeeData!['passport_valid_to'] ?? 'N/A'),
+    ]);
+  }
+
   Widget _buildRemarksSection() {
     final remarks = _employeeData!['remarks'];
 
     return _buildSection('Remarks', [
       _buildDetailRow('Remarks', remarks ?? 'No remarks available'),
     ]);
+  }
+
+  Future<void> _downloadPdf(String url, String fileName) async {
+    try {
+      print('📥 Starting PDF download: $url');
+
+      // Show download progress dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Downloading PDF...'),
+              SizedBox(height: 8),
+              Text(
+                fileName,
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+
+      // Request storage permission
+      if (Platform.isAndroid) {
+        final status = await Permission.storage.request();
+        if (!status.isGranted) {
+          Navigator.of(context).pop(); // Close loading dialog
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Storage permission required to download PDF'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+      }
+
+      // Download the file
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        // Get downloads directory
+        Directory? downloadsDir;
+        if (Platform.isAndroid) {
+          downloadsDir = Directory('/storage/emulated/0/Download');
+          if (!await downloadsDir.exists()) {
+            downloadsDir = await getExternalStorageDirectory();
+          }
+        } else if (Platform.isIOS) {
+          downloadsDir = await getApplicationDocumentsDirectory();
+        }
+
+        if (downloadsDir != null) {
+          // Clean filename
+          String cleanFileName =
+              fileName.replaceAll(RegExp(r'[^\w\s-.]'), '').trim();
+          if (!cleanFileName.endsWith('.pdf')) {
+            cleanFileName += '.pdf';
+          }
+
+          // Create file path
+          String filePath = '${downloadsDir.path}/$cleanFileName';
+
+          // Write file
+          File file = File(filePath);
+          await file.writeAsBytes(response.bodyBytes);
+
+          Navigator.of(context).pop(); // Close loading dialog
+
+          // Show success message with option to open
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('PDF downloaded successfully!'),
+                  SizedBox(height: 4),
+                  Text(
+                    'Saved to: $filePath',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 4),
+              action: SnackBarAction(
+                label: 'Open',
+                textColor: Colors.white,
+                onPressed: () async {
+                  try {
+                    final Uri fileUri = Uri.file(filePath);
+                    await launchUrl(fileUri);
+                  } catch (e) {
+                    print('Error opening downloaded file: $e');
+                  }
+                },
+              ),
+            ),
+          );
+
+          print('✅ PDF downloaded successfully: $filePath');
+        } else {
+          throw Exception('Could not access downloads directory');
+        }
+      } else {
+        throw Exception('Failed to download PDF: HTTP ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Download error: $e');
+
+      // Close loading dialog if still open
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Download failed: ${e.toString()}'),
+              SizedBox(height: 4),
+              Text('Try copying the URL instead',
+                  style: TextStyle(fontSize: 12)),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 4),
+          action: SnackBarAction(
+            label: 'Copy URL',
+            textColor: Colors.white,
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: url));
+            },
+          ),
+        ),
+      );
+    }
   }
 }
