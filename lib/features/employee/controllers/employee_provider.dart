@@ -20,14 +20,11 @@ class EmployeeProvider extends ChangeNotifier {
 
   final ApiService _apiService = getIt<ApiService>();
 
-  // Debug mode flag
   bool _debugMode = kDebugMode;
 
-  // Unified data collection for all screens
   Map<String, dynamic> _allFormData = {};
   List<String> _debugLogs = [];
 
-  // API call tracking
   Map<String, dynamic> _apiCallHistory = {};
   int _apiCallCount = 0;
 
@@ -55,7 +52,6 @@ class EmployeeProvider extends ChangeNotifier {
       final timestamp = DateTime.now().toIso8601String();
       _debugLogs.add('[$timestamp] $message');
       print('🐛 DEBUG: $message');
-      // Don't call notifyListeners here to avoid setState during build
     }
   }
 
@@ -64,7 +60,6 @@ class EmployeeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Debug function to print complete data collection status
   void printCompleteDebugSummary() {
     print(
         '🐛 DEBUG: ============ COMPLETE DATA COLLECTION SUMMARY ============');
@@ -77,7 +72,6 @@ class EmployeeProvider extends ChangeNotifier {
     print('🐛 DEBUG: Missing Screens: ${getMissingScreens().join(', ')}');
     print('🐛 DEBUG: ');
 
-    // Print data for each completed screen
     _allFormData.forEach((screenName, data) {
       print('🐛 DEBUG: [$screenName] Data:');
       if (data is Map<String, dynamic>) {
@@ -99,7 +93,6 @@ class EmployeeProvider extends ChangeNotifier {
       print(
           '🐛 DEBUG: Call provider.createEmployeeFromCollectedData() to submit');
 
-      // Show formatted API data
       final apiData = getFormattedDataForAPI();
       print('🐛 DEBUG: API Data Summary: ${apiData.keys.length} fields ready');
       print('🐛 DEBUG: API Fields: ${apiData.keys.join(', ')}');
@@ -113,7 +106,6 @@ class EmployeeProvider extends ChangeNotifier {
     print('🐛 DEBUG: ========================================================');
   }
 
-  // Update form data for specific screen
   void updateFormData(String screenName, Map<String, dynamic> data) {
     print('📝 DEBUG: ===== UPDATING FORM DATA =====');
     print('📝 DEBUG: Screen: $screenName');
@@ -122,7 +114,6 @@ class EmployeeProvider extends ChangeNotifier {
     _allFormData[screenName] = data;
     final timestamp = DateTime.now().toString();
 
-    // Print data details for debugging
     data.forEach((key, value) {
       if (value is List) {
         print('📝 DEBUG: $key: List with ${value.length} items');
@@ -133,7 +124,6 @@ class EmployeeProvider extends ChangeNotifier {
       }
     });
 
-    // Print completion status
     final completion = getCompletionPercentage();
     final missing = getMissingScreens();
     print('📊 DEBUG: Overall completion: ${completion.toStringAsFixed(1)}%');
@@ -144,7 +134,6 @@ class EmployeeProvider extends ChangeNotifier {
     } else {
       print(
           '🎉 DEBUG: ALL SCREENS COMPLETED! Automatically triggering API submission...');
-      // Automatically call API when all forms are completed
       Future.microtask(() async {
         await createEmployeeFromCollectedData();
       });
@@ -152,16 +141,13 @@ class EmployeeProvider extends ChangeNotifier {
 
     print('📝 DEBUG: ===============================');
 
-    // Use Future.microtask to avoid setState during build
     Future.microtask(() => notifyListeners());
   }
 
-  // Get data for specific screen
   Map<String, dynamic>? getScreenData(String screenName) {
     return _allFormData[screenName];
   }
 
-  // Get all collected data formatted for API exactly matching curl command
   Map<String, dynamic> getFormattedDataForAPI() {
     final formattedData = <String, dynamic>{};
 
@@ -169,7 +155,6 @@ class EmployeeProvider extends ChangeNotifier {
     print(
         '🔄 DEBUG: Processing ${_allFormData.keys.length} screens for API format');
 
-    // Basic Info Screen - Match exact cURL format
     if (_allFormData.containsKey('basic_info')) {
       final basicInfo = _allFormData['basic_info'] as Map<String, dynamic>;
       formattedData.addAll({
@@ -182,7 +167,6 @@ class EmployeeProvider extends ChangeNotifier {
         'religion': basicInfo['religion'] ?? 'Hindu',
       });
 
-      // Family members - exact cURL format
       final familyMembers = basicInfo['family_members'] as List? ?? [];
       for (int i = 0; i < familyMembers.length; i++) {
         final member = familyMembers[i] as Map<String, dynamic>;
@@ -192,7 +176,6 @@ class EmployeeProvider extends ChangeNotifier {
         formattedData['dob[$i]'] = member['dob'] ?? '';
       }
     } else {
-      // Default values from cURL
       formattedData.addAll({
         'empName': 'User 3',
         'gender': 'male',
@@ -212,7 +195,6 @@ class EmployeeProvider extends ChangeNotifier {
       });
     }
 
-    // Employment Details - REQUIRED FIELDS from cURL
     if (_allFormData.containsKey('employment_details')) {
       final empDetails =
           _allFormData['employment_details'] as Map<String, dynamic>;
@@ -225,7 +207,6 @@ class EmployeeProvider extends ChangeNotifier {
         'punching_code': empDetails['punching_code']?.toString() ?? '1234',
       });
     } else {
-      // Default from cURL
       formattedData.addAll({
         'department_id': '3',
         'designation_id': '3',
@@ -236,7 +217,6 @@ class EmployeeProvider extends ChangeNotifier {
       });
     }
 
-    // Contact Details - exact cURL format
     if (_allFormData.containsKey('contact_details')) {
       final contactDetails =
           _allFormData['contact_details'] as Map<String, dynamic>;
@@ -251,7 +231,6 @@ class EmployeeProvider extends ChangeNotifier {
         'phone': contactDetails['phone'] ?? '1131111111',
       });
 
-      // Addresses - exact cURL format with only 2 entries each
       final presentAddress = contactDetails['present_address'] as List? ?? [];
       formattedData['present_address[0]'] =
           presentAddress.isNotEmpty ? presentAddress[0] : '123 Main St';
@@ -266,7 +245,6 @@ class EmployeeProvider extends ChangeNotifier {
       formattedData['permanent_address[1]'] =
           permanentAddress.length > 1 ? permanentAddress[1] : 'Floor 2';
     } else {
-      // Default from cURL
       formattedData.addAll({
         'emergency_contact': '9876543210',
         'contactPersionName': 'Mike Doe',
@@ -280,7 +258,6 @@ class EmployeeProvider extends ChangeNotifier {
       });
     }
 
-    // Education Details - exact cURL nested format
     if (_allFormData.containsKey('education_details')) {
       final educationDetails =
           _allFormData['education_details'] as Map<String, dynamic>;
@@ -300,7 +277,6 @@ class EmployeeProvider extends ChangeNotifier {
             education['percentage'] ?? '';
       }
     } else {
-      // Default from cURL - 2 education entries
       formattedData.addAll({
         'education[0][degree]': 'B.Tech',
         'education[0][university]': 'XYZ University',
@@ -317,7 +293,6 @@ class EmployeeProvider extends ChangeNotifier {
       });
     }
 
-    // Government & Bank Details - exact cURL format
     if (_allFormData.containsKey('govt_bank_details')) {
       final govtDetails =
           _allFormData['govt_bank_details'] as Map<String, dynamic>;
@@ -330,7 +305,6 @@ class EmployeeProvider extends ChangeNotifier {
         'remarks': govtDetails['remarks'] ?? 'This is a sample remark.',
       });
     } else {
-      // Default from cURL
       formattedData.addAll({
         'aadhar': '123456789012',
         'pan': 'ABCDE1234F',
@@ -341,7 +315,6 @@ class EmployeeProvider extends ChangeNotifier {
       });
     }
 
-    // EPF Declaration - exact cURL format
     if (_allFormData.containsKey('epf_declaration')) {
       final epfDetails =
           _allFormData['epf_declaration'] as Map<String, dynamic>;
@@ -364,7 +337,6 @@ class EmployeeProvider extends ChangeNotifier {
         'passport_valid_to': epfDetails['passport_valid_to'] ?? '2030-01-01',
       });
 
-      // Previous employment from cURL
       final previousEmploymentList =
           epfDetails['previous_employment'] as List? ?? [];
       for (int i = 0; i < previousEmploymentList.length; i++) {
@@ -381,7 +353,6 @@ class EmployeeProvider extends ChangeNotifier {
             employment['reason_for_leaving'] ?? '';
       }
     } else {
-      // Default from cURL
       formattedData.addAll({
         'pf_member': 'yes',
         'pension_member': 'yes',
@@ -403,7 +374,6 @@ class EmployeeProvider extends ChangeNotifier {
       });
     }
 
-    // ESIC Declaration - exact cURL format
     if (_allFormData.containsKey('esic_declaration')) {
       final esicDetails =
           _allFormData['esic_declaration'] as Map<String, dynamic>;
@@ -413,7 +383,6 @@ class EmployeeProvider extends ChangeNotifier {
         'dispensary': esicDetails['dispensary'] ?? 'City Health Center',
       });
 
-      // ESIC family from form data
       final familyList = esicDetails['family'] as List? ?? [];
       for (int i = 0; i < familyList.length; i++) {
         final family = familyList[i] as Map<String, dynamic>;
@@ -424,7 +393,6 @@ class EmployeeProvider extends ChangeNotifier {
         formattedData['family[$i][residence]'] = family['residence'] ?? '';
       }
     } else {
-      // Default from cURL
       formattedData.addAll({
         'insurance_no': 'ESI12345',
         'branch_office': 'Central Office',
@@ -437,7 +405,6 @@ class EmployeeProvider extends ChangeNotifier {
       });
     }
 
-    // Nomination Form - exact cURL format
     if (_allFormData.containsKey('nomination_form')) {
       final nominationDetails =
           _allFormData['nomination_form'] as Map<String, dynamic>;
@@ -446,7 +413,6 @@ class EmployeeProvider extends ChangeNotifier {
         'witness_2_name': nominationDetails['witness2_name'] ?? 'Witness Two',
       });
 
-      // EPF nominees
       final epfList = nominationDetails['epf'] as List? ?? [];
       for (int i = 0; i < epfList.length; i++) {
         final epf = epfList[i] as Map<String, dynamic>;
@@ -458,7 +424,6 @@ class EmployeeProvider extends ChangeNotifier {
         formattedData['epf[$i][guardian]'] = epf['guardian'] ?? '';
       }
 
-      // EPS nominees
       final epsList = nominationDetails['eps'] as List? ?? [];
       for (int i = 0; i < epsList.length; i++) {
         final eps = epsList[i] as Map<String, dynamic>;
@@ -467,7 +432,6 @@ class EmployeeProvider extends ChangeNotifier {
         formattedData['eps[$i][relationship]'] = eps['relationship'] ?? '';
       }
 
-      // Other documents
       final otherDocumentsList =
           nominationDetails['other_documents'] as List? ?? [];
       for (int i = 0; i < otherDocumentsList.length; i++) {
@@ -475,7 +439,6 @@ class EmployeeProvider extends ChangeNotifier {
         formattedData['other_documents[$i][name]'] = document['name'] ?? '';
       }
     } else {
-      // Default from cURL
       formattedData.addAll({
         'witness_1_name': 'Witness One',
         'witness_2_name': 'Witness Two',
@@ -510,7 +473,6 @@ class EmployeeProvider extends ChangeNotifier {
     return formattedData;
   }
 
-  // Get completion percentage
   double getCompletionPercentage() {
     const totalScreens = 8;
     final completedScreens = _allFormData.keys.length;
@@ -521,7 +483,6 @@ class EmployeeProvider extends ChangeNotifier {
     return percentage;
   }
 
-  // Get missing screens - Updated to match actual screen names
   List<String> getMissingScreens() {
     const allScreens = [
       'basic_info',
@@ -574,10 +535,8 @@ class EmployeeProvider extends ChangeNotifier {
       print('🚀 DEBUG: Formatted ${formattedData.keys.length} fields for API');
       print('🚀 DEBUG: API Endpoint: /employee/store');
 
-      // Create FormData for multipart request exactly as curl command
       FormData formData = FormData();
 
-      // Add all string fields exactly as they appear in curl command
       formattedData.forEach((key, value) {
         if (value is String && value.isNotEmpty) {
           formData.fields.add(MapEntry(key, value));
@@ -585,7 +544,6 @@ class EmployeeProvider extends ChangeNotifier {
         }
       });
 
-      // Add file fields if available in collected data
       _addFileFields(formData);
 
       print(
@@ -649,7 +607,6 @@ class EmployeeProvider extends ChangeNotifier {
       _setError('Unexpected Error: $e');
     }
   }
-
 
   void _addFileFields(FormData formData) {
     // Add file fields from collected data

@@ -1,5 +1,6 @@
 import 'package:coms_india/features/employee/views/add_contact.dart';
 import 'package:coms_india/features/employee/views/education_details.dart';
+import 'package:coms_india/features/employee/views/employee_details.dart';
 import 'package:coms_india/features/employee/views/employee_list.dart';
 import 'package:coms_india/features/employee/views/employment_screen.dart';
 import 'package:coms_india/features/employee/views/employment_details.dart';
@@ -12,6 +13,11 @@ import 'package:coms_india/features/home/view/team_page.dart';
 import 'package:coms_india/features/task/view/task_page.dart';
 import 'package:coms_india/features/alerts/view/alerts_page.dart';
 import 'package:coms_india/features/tickets/view/ticket_page.dart';
+import 'package:coms_india/features/shift/views/shift_list_page.dart';
+import 'package:coms_india/features/shift/views/add_shift_page.dart';
+import 'package:coms_india/features/shift/views/assign_shift_page.dart';
+import 'package:coms_india/features/shift/views/site_shifts_page.dart';
+import 'package:coms_india/features/shift/views/assign_employee_page.dart';
 import 'package:coms_india/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -100,6 +106,25 @@ class AppRouter {
         ),
       ),
       GoRoute(
+        path: '/employee/:id',
+        name: 'employeeDetails',
+        builder: (context, state) {
+          final id = int.tryParse(state.pathParameters['id'] ?? '');
+          final name = state.extra as String?;
+          if (id != null) {
+            return EmployeeDetailsPage(
+              userId: id,
+              employeeName: name ?? 'Employee Details',
+            );
+          }
+          return const Scaffold(
+            body: Center(
+              child: Text('Invalid Employee ID'),
+            ),
+          );
+        },
+      ),
+      GoRoute(
         path: '/add-employee',
         name: 'addEmployee',
         builder: (context, state) => const AddEmployeePage(),
@@ -144,6 +169,46 @@ class AppRouter {
         name: 'nomination_form',
         builder: (context, state) => NominationFormScreen(),
       ),
+      // Shift Management Routes
+      GoRoute(
+        path: '/shifts',
+        name: 'shifts',
+        builder: (context, state) => GlobalBottomNavigation(
+          currentRoute: state.uri.path,
+          child: const ShiftListPage(),
+        ),
+      ),
+      GoRoute(
+        path: '/site-shifts',
+        name: 'site-shifts',
+        builder: (context, state) => const SiteShiftsPage(),
+      ),
+      GoRoute(
+        path: '/assign-employee',
+        name: 'assign-employee',
+        builder: (context, state) => const AssignEmployeePage(),
+      ),
+      GoRoute(
+        path: '/assign-shift',
+        name: 'assignShift',
+        builder: (context, state) {
+          final preSelectedSite = state.uri.queryParameters['site'];
+          return AssignShiftPage(preSelectedSite: preSelectedSite);
+        },
+      ),
+      GoRoute(
+        path: '/add-shift',
+        name: 'addShift',
+        builder: (context, state) => const AddShiftPage(),
+      ),
+      GoRoute(
+        path: '/edit-shift/:id',
+        name: 'editShift',
+        builder: (context, state) {
+          final shiftId = state.pathParameters['id'];
+          return AddShiftPage(shiftId: shiftId);
+        },
+      ),
     ],
     redirect: (BuildContext context, GoRouterState state) async {
       final AuthController authController = getIt<AuthController>();
@@ -167,6 +232,10 @@ class AppRouter {
               state.matchedLocation == '/tasks' ||
               state.matchedLocation == '/alerts' ||
               state.matchedLocation == '/tickets' ||
+              state.matchedLocation == '/shifts' ||
+              state.matchedLocation == '/assign-shift' ||
+              state.matchedLocation == '/site-shifts' ||
+              state.matchedLocation == '/assign-employee' ||
               state.matchedLocation == '/profile') &&
           authController.currentUser.value == null) {
         print('Redirecting to login from protected page');

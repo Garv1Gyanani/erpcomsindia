@@ -7,8 +7,13 @@ class ApiConstants {
   static const String taskStatus = '/api/status/task';
   static const String createEmployee = '/api/employee/store';
   static const String departments = '/api/departments';
-  static const String sites = '/api/sites';
+  static const String sites = '/api/site/list';
   static const String locations = '/api/locations';
+  static const String siteShifts = '/api/site/shift/index';
+  static const String assignedSites = '/api/site/list/assigned';
+  static const String allShifts = '/api/shift/index';
+  static const String createShift = '/api/shift/store';
+  static const String assignShifts = '/api/site/shift/assign';
 }
 
 class AppColors {

@@ -50,7 +50,8 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       } catch (e) {
         setState(() {
-          _errorMessage = 'Failed to send OTP. Please try again. ${e.toString()}';
+          _errorMessage =
+              'Failed to send OTP. Please try again. ${e.toString()}';
         });
       } finally {
         if (mounted) {

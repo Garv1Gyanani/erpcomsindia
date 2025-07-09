@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:provider/provider.dart';
 import '../controllers/employee_provider.dart';
+import '../models/site_model.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/services/api_service.dart';
 
@@ -62,6 +63,14 @@ class SiteData {
     return SiteData(
       id: json['id'],
       name: json['site_name'],
+    );
+  }
+
+  // Convert from SiteModel
+  factory SiteData.fromSiteModel(SiteModel site) {
+    return SiteData(
+      id: site.id,
+      name: site.siteName,
     );
   }
 }
@@ -198,9 +207,19 @@ class _EmploymentDetailsSectionState extends State<EmploymentDetailsSection> {
       setState(() => _isLoadingSites = true);
       final response = await _apiService.getSites();
 
-      if (response.data['status'] == true) {
-        final List<dynamic> sitesJson = response.data['data'];
-        _sites = sitesJson.map((json) => SiteData.fromJson(json)).toList();
+      if (response.statusCode == 200 && response.data != null) {
+        final siteListResponse = SiteListResponse.fromJson(response.data);
+
+        if (siteListResponse.status) {
+          _sites = siteListResponse.data
+              .map((site) => SiteData.fromSiteModel(site))
+              .toList();
+          print('✅ Sites loaded successfully: ${_sites.length} sites');
+        } else {
+          print('❌ Failed to load sites: ${siteListResponse.message}');
+        }
+      } else {
+        print('❌ Failed to load sites. Status: ${response.statusCode}');
       }
     } catch (e) {
       print('❌ Error loading sites: $e');

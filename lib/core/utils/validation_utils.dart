@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class ValidationUtils {
   // Name field validation according to API requirements
   static String? validateEmployeeName(String? value) {
@@ -49,6 +51,21 @@ class ValidationUtils {
     // Allow bank names to contain letters, numbers, spaces, and common bank name characters
     if (!RegExp(r'^[a-zA-Z0-9\s\-&.()]+$').hasMatch(value.trim())) {
       return 'Invalid bank name format';
+    }
+    return null;
+  }
+
+  static String? validateIfscCode(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'IFSC code is required';
+    }
+    if (value.trim().length != 11) {
+      return 'IFSC code must be 11 characters';
+    }
+    // IFSC code format: 4 letters (bank code) + 0 + 6 alphanumeric
+    if (!RegExp(r'^[A-Z]{4}0[A-Z0-9]{6}$')
+        .hasMatch(value.trim().toUpperCase())) {
+      return 'Invalid IFSC code format (e.g., SBIN0001234)';
     }
     return null;
   }
@@ -195,5 +212,71 @@ class ValidationUtils {
     }
 
     return null;
+  }
+
+  /// Converts 24-hour time format (HH:mm or HH:mm:ss) to 12-hour AM/PM format
+  ///
+  /// Examples:
+  /// - "09:00" -> "9:00 AM"
+  /// - "09:00:00" -> "9:00 AM"
+  /// - "14:30" -> "2:30 PM"
+  /// - "14:30:00" -> "2:30 PM"
+  /// - "00:00" -> "12:00 AM"
+  /// - "23:45" -> "11:45 PM"
+  static String formatTimeToAMPM(String time24) {
+    try {
+      // Handle both HH:mm and HH:mm:ss formats
+      String timeWithoutSeconds = time24;
+      if (time24.contains(':')) {
+        final parts = time24.split(':');
+        if (parts.length >= 2) {
+          // Take only hours and minutes, ignore seconds
+          timeWithoutSeconds = '${parts[0]}:${parts[1]}';
+        }
+      }
+
+      final parts = timeWithoutSeconds.split(':');
+      if (parts.length != 2) return time24;
+
+      int hour = int.parse(parts[0]);
+      int minute = int.parse(parts[1]);
+
+      if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+        return time24; // Return original if invalid
+      }
+
+      String period = hour >= 12 ? 'PM' : 'AM';
+
+      // Convert to 12-hour format
+      if (hour == 0) {
+        hour = 12; // 12 AM
+      } else if (hour > 12) {
+        hour = hour - 12; // PM hours
+      }
+
+      // Format with leading zero for minutes
+      String minuteStr = minute.toString().padLeft(2, '0');
+
+      return '$hour:$minuteStr $period';
+    } catch (e) {
+      return time24; // Return original if parsing fails
+    }
+  }
+
+  /// Formats a time range from 24-hour to 12-hour AM/PM format
+  ///
+  /// Example: "09:00 - 17:00" -> "9:00 AM - 5:00 PM"
+  static String formatTimeRangeToAMPM(String timeRange) {
+    try {
+      final parts = timeRange.split(' - ');
+      if (parts.length != 2) return timeRange;
+
+      String startTime = formatTimeToAMPM(parts[0].trim());
+      String endTime = formatTimeToAMPM(parts[1].trim());
+
+      return '$startTime - $endTime';
+    } catch (e) {
+      return timeRange; // Return original if parsing fails
+    }
   }
 }

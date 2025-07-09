@@ -25,8 +25,8 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
   final List<MenuItemData> _menuItems = [
     MenuItemData(
       id: 2,
-      title: 'Employee List',
-      icon: Icons.people_alt,
+      title: 'Sites List',
+      icon: Icons.location_city,
       color: Colors.green,
     ),
     MenuItemData(
@@ -34,6 +34,18 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
       title: 'Attendance',
       icon: MaterialCommunityIcons.account_group,
       color: Colors.blue,
+    ),
+    MenuItemData(
+      id: 3,
+      title: 'Shift Management',
+      icon: Icons.schedule,
+      color: Colors.purple,
+    ),
+    MenuItemData(
+      id: 4,
+      title: 'Assign Shift',
+      icon: Icons.assignment_ind,
+      color: Colors.orange,
     ),
   ];
 
@@ -201,7 +213,13 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
               const Divider(),
               _buildDrawerItem(Icons.settings, 'Settings'),
               _buildDrawerItem(Icons.help_outline, 'Help'),
-              _buildDrawerItem(Icons.exit_to_app, 'Logout'),
+              Obx(() {
+                return _buildDrawerItem(
+                  Icons.exit_to_app,
+                  'Logout',
+                  isLoading: _authController.isLoading.value,
+                );
+              }),
             ],
           ),
         ),
@@ -211,7 +229,7 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
 
 // Updated drawer item with navigation to tasks
   Widget _buildDrawerItem(IconData icon, String title,
-      {bool isLogout = false, Function()? onNavigate}) {
+      {bool isLogout = false, Function()? onNavigate, bool isLoading = false}) {
     return ListTile(
       dense: true,
       visualDensity: VisualDensity.compact,
@@ -227,7 +245,15 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
           color: Colors.grey[800],
         ),
       ),
+      trailing: isLoading
+          ? const SizedBox(
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(strokeWidth: 2.0),
+            )
+          : null,
       onTap: () {
+        if (isLoading) return;
         Navigator.pop(context); // Close drawer first
 
         // Handle different menu items
@@ -481,7 +507,7 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
-          childAspectRatio: 0.9,
+          childAspectRatio: 1.1,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
         ),
@@ -498,8 +524,12 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
     return GestureDetector(
       onTap: () {
         // Handle navigation based on menu item
-        if (item.title == 'Employee List') {
-          context.goNamed('employees');
+        if (item.title == 'Sites List') {
+          context.pushNamed('employees');
+        } else if (item.title == 'Shift Management') {
+          context.pushNamed('shifts');
+        } else if (item.title == 'Assign Shift') {
+          context.pushNamed('site-shifts');
         }
         // Add other menu item navigations here if needed
       },

@@ -22,12 +22,12 @@ class _GlobalBottomNavigationState extends State<GlobalBottomNavigation> {
   final List<NavigationItem> _navigationItems = [
     NavigationItem(
       icon: MaterialCommunityIcons.account_group,
-      label: 'Team',
+      label: 'Dashboard',
       route: '/team',
     ),
     NavigationItem(
       icon: MaterialCommunityIcons.account_multiple,
-      label: 'Employees',
+      label: 'Sites',
       route: '/employees',
     ),
     NavigationItem(

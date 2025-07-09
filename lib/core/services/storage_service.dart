@@ -447,7 +447,7 @@ class StorageService {
       result['tokenExpiry'] = expiryTime;
 
       if (token != null) {
-        result['isTokenValid'] = expiryTime != null   
+        result['isTokenValid'] = expiryTime != null
             ? DateTime.now().millisecondsSinceEpoch < expiryTime
             : true;
       } else {
@@ -483,4 +483,4 @@ class StorageService {
       return result;
     }
   }
-  }
+}

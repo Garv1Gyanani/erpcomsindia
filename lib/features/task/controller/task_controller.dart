@@ -41,7 +41,6 @@ class TaskStatusController extends GetxController {
 
   // Fetch task status for specific user
   Future<void> fetchTaskStatus() async {
-   
     try {
       _isLoading.value = true;
       _errorMessage.value = '';

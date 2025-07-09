@@ -176,7 +176,7 @@ class TaskStatusView extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Circular Progress Indicator
                   SizedBox(
                     height: 120,
@@ -188,8 +188,8 @@ class TaskStatusView extends StatelessWidget {
                           strokeWidth: 8,
                           backgroundColor: Colors.grey.shade300,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            controller.isAllCompleted 
-                                ? Colors.green 
+                            controller.isAllCompleted
+                                ? Colors.green
                                 : Colors.blue.shade600,
                           ),
                         ),
@@ -206,9 +206,9 @@ class TaskStatusView extends StatelessWidget {
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   if (controller.isAllCompleted)
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -222,7 +222,7 @@ class TaskStatusView extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.check_circle, 
+                          Icon(Icons.check_circle,
                               color: Colors.green.shade700, size: 20),
                           const SizedBox(width: 8),
                           Text(
@@ -239,9 +239,9 @@ class TaskStatusView extends StatelessWidget {
               ),
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // Task Statistics Cards
           Row(
             children: [
@@ -264,9 +264,9 @@ class TaskStatusView extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           Row(
             children: [
               Expanded(
@@ -288,9 +288,9 @@ class TaskStatusView extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 32),
-          
+
           // Action Buttons
           Row(
             children: [
@@ -335,7 +335,8 @@ class TaskStatusView extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(
@@ -372,7 +373,7 @@ class TaskStatusView extends StatelessWidget {
   void _showUserIdDialog() {
     final TextEditingController textController = TextEditingController();
     textController.text = controller.currentUserId;
-    
+
     Get.dialog(
       AlertDialog(
         title: const Text('Change User ID'),

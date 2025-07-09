@@ -274,4 +274,124 @@ class ApiService {
       rethrow;
     }
   }
+
+  // Get site shifts list
+  Future<Response> getSiteShifts() async {
+    try {
+      print('🕐 DEBUG: Fetching site shifts...');
+      final response = await _dio.get(
+        ApiConstants.siteShifts,
+        options: Options(
+          validateStatus: (status) {
+            return status! < 500; // Accept all status codes less than 500
+          },
+        ),
+      );
+      print('🕐 DEBUG: Site shifts response: ${response.data}');
+      return response;
+    } catch (e) {
+      print('❌ DEBUG: API Get Site Shifts error: ${e.toString()}');
+      rethrow;
+    }
+  }
+
+  // Get assigned sites for current user
+  Future<Response> getAssignedSites() async {
+    try {
+      print('🏢 DEBUG: Fetching assigned sites...');
+      final response = await _dio.get(
+        ApiConstants.assignedSites,
+        options: Options(
+          validateStatus: (status) {
+            return status! < 500; // Accept all status codes less than 500
+          },
+        ),
+      );
+      print('🏢 DEBUG: Assigned sites response: ${response.data}');
+      return response;
+    } catch (e) {
+      print('❌ DEBUG: API Get Assigned Sites error: ${e.toString()}');
+      rethrow;
+    }
+  }
+
+  // Get all available shifts
+  Future<Response> getAllShifts() async {
+    try {
+      print('⏰ DEBUG: Fetching all shifts...');
+      final response = await _dio.get(
+        ApiConstants.allShifts,
+        options: Options(
+          validateStatus: (status) {
+            return status! < 500; // Accept all status codes less than 500
+          },
+        ),
+      );
+      print('⏰ DEBUG: All shifts response: ${response.data}');
+      return response;
+    } catch (e) {
+      print('❌ DEBUG: API Get All Shifts error: ${e.toString()}');
+      rethrow;
+    }
+  }
+
+  // Create new shift
+  Future<Response> createNewShift(
+      String name, String startTime, String endTime) async {
+    try {
+      print('➕ DEBUG: Creating new shift...');
+      final formData = FormData.fromMap({
+        'name': name,
+        'start_time': startTime,
+        'end_time': endTime,
+      });
+
+      final response = await _dio.post(
+        ApiConstants.createShift,
+        data: formData,
+        options: Options(
+          validateStatus: (status) {
+            return status! < 500; // Accept all status codes less than 500
+          },
+        ),
+      );
+      print('➕ DEBUG: Create shift response: ${response.data}');
+      return response;
+    } catch (e) {
+      print('❌ DEBUG: API Create Shift error: ${e.toString()}');
+      rethrow;
+    }
+  }
+
+  // Assign shifts to site
+  Future<Response> assignShiftsToSite(
+      int siteId, List<int> shiftIds, int defaultShiftId) async {
+    try {
+      print('🔄 DEBUG: Assigning shifts to site...');
+      final requestData = {
+        'site_id': siteId,
+        'shift_ids': shiftIds,
+        'default_shift_id': defaultShiftId,
+      };
+
+      final response = await _dio.post(
+        ApiConstants.assignShifts,
+        data: requestData,
+        options: Options(
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          validateStatus: (status) {
+            return status! < 500; // Accept all status codes less than 500
+          },
+        ),
+      );
+      print('🔄 DEBUG: Assign shifts response: ${response.data}');
+      return response;
+    } catch (e) {
+      print('❌ DEBUG: API Assign Shifts error: ${e.toString()}');
+      rethrow;
+    }
+  }
 }

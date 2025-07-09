@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../controllers/employee_provider.dart';
 import '../../../core/utils/validation_utils.dart';
+import '../../../core/services/ifsc_service.dart';
 
 class GovernmentBankForm extends StatefulWidget {
   @override
@@ -73,6 +74,10 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
   // Verification checkboxes
   bool _ifscVerified = false;
   bool _bankAccountVerified = false;
+
+  // IFSC bank details
+  Map<String, dynamic>? _ifscBankDetails;
+  bool _isLoadingIfsc = false;
 
   @override
   void initState() {
@@ -327,17 +332,27 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
             sample: 'Sample: SBIN0001234',
             textCapitalization: TextCapitalization.characters,
             maxLength: 11,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'IFSC code is required';
-              }
-              if (value.length != 11) {
-                return 'IFSC code must be 11 characters';
-              }
-              return null;
-            },
+            validator: ValidationUtils.validateIfscCode,
+            suffixIcon: IconButton(
+              icon: _isLoadingIfsc
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.search),
+              onPressed: _isLoadingIfsc ? null : _fetchIfscDetails,
+              tooltip: 'Verify IFSC Code',
+            ),
           ),
           const SizedBox(height: 12),
+
+          // IFSC Bank Details Section
+          if (_ifscBankDetails != null) ...[
+            _buildIfscBankDetailsSection(),
+            const SizedBox(height: 16),
+          ],
+
           _buildFileUploadButton(
             'Bank Passbook / Cheque Book *',
             _bankPassbookImage,
@@ -720,6 +735,7 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
     int? maxLength,
     String? Function(String?)? validator,
     TextCapitalization textCapitalization = TextCapitalization.none,
+    Widget? suffixIcon,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -764,6 +780,7 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
             counterText: '',
+            suffixIcon: suffixIcon,
           ),
         ),
       ],
@@ -964,6 +981,188 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
         );
       }
     }
+  }
+
+  Future<void> _fetchIfscDetails() async {
+    final ifscCode = _ifscController.text.trim();
+
+    if (ifscCode.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter an IFSC code first'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final validationError = ValidationUtils.validateIfscCode(ifscCode);
+    if (validationError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(validationError),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoadingIfsc = true;
+    });
+
+    try {
+      final bankDetails = await IfscService.fetchBankDetails(ifscCode);
+
+      setState(() {
+        _ifscBankDetails = bankDetails;
+        _isLoadingIfsc = false;
+      });
+
+      if (bankDetails != null) {
+        // Auto-fill bank name if it's empty
+        if (_bankNameController.text.trim().isEmpty) {
+          _bankNameController.text = bankDetails['BANK'] ?? '';
+        }
+
+        // Mark IFSC as verified
+        setState(() {
+          _ifscVerified = true;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'IFSC verified: ${bankDetails['BANK']} - ${bankDetails['BRANCH']}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('IFSC code not found or invalid'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoadingIfsc = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error verifying IFSC: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Widget _buildIfscBankDetailsSection() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        border: Border.all(color: Colors.blue.shade200),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                'IFSC Bank Details',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _buildDetailRow('Bank', _ifscBankDetails!['BANK']),
+          _buildDetailRow('Branch', _ifscBankDetails!['BRANCH']),
+          _buildDetailRow('Address', _ifscBankDetails!['ADDRESS']),
+          _buildDetailRow('City', _ifscBankDetails!['CITY']),
+          _buildDetailRow('District', _ifscBankDetails!['DISTRICT']),
+          _buildDetailRow('State', _ifscBankDetails!['STATE']),
+          _buildDetailRow('MICR', _ifscBankDetails!['MICR']),
+          _buildDetailRow('Contact', _ifscBankDetails!['CONTACT'] ?? 'N/A'),
+          const SizedBox(height: 8),
+          const Text(
+            'Payment Services:',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: [
+              _buildServiceChip('UPI', _ifscBankDetails!['UPI'] ?? false),
+              _buildServiceChip('NEFT', _ifscBankDetails!['NEFT'] ?? false),
+              _buildServiceChip('RTGS', _ifscBankDetails!['RTGS'] ?? false),
+              _buildServiceChip('IMPS', _ifscBankDetails!['IMPS'] ?? false),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, dynamic value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              '$label:',
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value?.toString() ?? 'N/A',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServiceChip(String service, bool isAvailable) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: isAvailable ? Colors.green.shade100 : Colors.grey.shade100,
+        border: Border.all(
+          color: isAvailable ? Colors.green.shade300 : Colors.grey.shade300,
+        ),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        service,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: isAvailable ? Colors.green.shade700 : Colors.grey.shade600,
+        ),
+      ),
+    );
   }
 
   void _submitForm() {
