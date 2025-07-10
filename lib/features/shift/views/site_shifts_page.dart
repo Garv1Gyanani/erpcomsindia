@@ -127,7 +127,7 @@ class _SiteShiftsPageState extends State<SiteShiftsPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.of(context).pop();
+            context.goNamed('team');
           },
         ),
         actions: [

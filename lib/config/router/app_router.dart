@@ -181,7 +181,10 @@ class AppRouter {
       GoRoute(
         path: '/site-shifts',
         name: 'site-shifts',
-        builder: (context, state) => const SiteShiftsPage(),
+        builder: (context, state) => GlobalBottomNavigation(
+          currentRoute: state.uri.path,
+          child: const SiteShiftsPage(),
+        ),
       ),
       GoRoute(
         path: '/assign-employee',

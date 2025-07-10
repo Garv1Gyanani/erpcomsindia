@@ -525,11 +525,11 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
       onTap: () {
         // Handle navigation based on menu item
         if (item.title == 'Sites List') {
-          context.pushNamed('employees');
+          context.goNamed('employees');
         } else if (item.title == 'Shift Management') {
-          context.pushNamed('shifts');
+          context.goNamed('shifts');
         } else if (item.title == 'Assign Shift') {
-          context.pushNamed('site-shifts');
+          context.goNamed('site-shifts');
         }
         // Add other menu item navigations here if needed
       },
