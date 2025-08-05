@@ -22,6 +22,7 @@ class AuthController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    // No need for 'await' here, it can run in the background
     checkLoginStatus();
   }
 
@@ -92,37 +93,13 @@ class AuthController extends GetxController {
             responseData['login_as'] as String?; // Get login type
 
         if (authToken != null && responseData['user'] != null) {
-          // Save token and login type
+          // Save to memory FIRST
           token.value = authToken;
           loginAs.value = userLoginAs ?? '';
 
           // Parse user data
           final userData = responseData['user'] as Map<String, dynamic>;
           final user = UserModel.fromJson(userData);
-
-          // Process roles
-          List<String> roles = [];
-          if (userData['roles'] != null && userData['roles'] is List) {
-            final userRoles = userData['roles'] as List;
-            roles = userRoles
-                .map((role) {
-                  if (role is String) return role;
-                  if (role is Map && role['name'] != null)
-                    return role['name'].toString();
-                  return '';
-                })
-                .where((role) => role.isNotEmpty)
-                .toList();
-          }
-
-          // Update user roles
-          if (roles.isNotEmpty) {
-            user.roles.clear();
-            user.roles.addAll(roles
-                .map((role) => RoleModel(id: 1, name: role, guardName: role)));
-          }
-
-          // Save to memory
           currentUser.value = user;
 
           // Save to storage including login type
@@ -165,10 +142,6 @@ class AuthController extends GetxController {
     }
   }
 
-  // Logout user
-// Logout user - Updated method for AuthController
-// Logout user - Fixed version
-// Logout user - Final Fixed Version
   Future<void> logout(BuildContext context) async {
     try {
       print('Starting logout process...');
@@ -195,21 +168,25 @@ class AuthController extends GetxController {
 
       // Clear data from storage
       print('Clearing user data from storage');
-      final clearResult = await storageService.clearAll();
-      print('Storage cleared: $clearResult');
+      await storageService.clearAll();
 
-      GoRouter.of(context).refresh();
+      // Refresh the router to trigger redirect logic
+      if (context.mounted) {
+        GoRouter.of(context).refresh();
+      }
     } catch (e) {
       print('Error during logout: $e');
 
-      // Force clear everything even on error - IMMEDIATELY
+      // As a fallback, force clear memory and try to refresh router again
       token.value = '';
       currentUser.value = null;
       errorMessage.value = '';
       loginAs.value = '';
       update();
 
-      GoRouter.of(context).refresh();
+      if (context.mounted) {
+        GoRouter.of(context).refresh();
+      }
     }
   }
 
@@ -217,60 +194,48 @@ class AuthController extends GetxController {
   Future<bool> checkLoginStatus() async {
     print('Checking login status...');
     try {
-      // First check if memory state indicates logged out
-      if (currentUser.value == null || token.value.isEmpty) {
-        print('Memory state indicates user is logged out');
-        return false;
-      }
-
       // Load token from storage
       final savedToken = await storageService.getToken();
 
-      if (savedToken != null && savedToken.isNotEmpty) {
-        // Verify token is still valid
-        final isTokenValid = await storageService.isTokenValid();
-        if (!isTokenValid) {
-          print('Token is expired, clearing all data');
-          await _clearAllUserData();
-          return false;
-        }
+      if (savedToken == null || savedToken.isEmpty) {
+        print('No valid token found. User is not logged in.');
+        await _clearAllUserData(); // Clean up any partial data
+        return false;
+      }
 
+      print(
+          'Found saved token: ${savedToken.substring(0, Math.min(15, savedToken.length))}...');
+
+      // Load user and login type from storage
+      final savedUser = await storageService.getUser();
+      final savedLoginAs = await storageService.getLoginType();
+
+      if (savedUser != null && savedLoginAs != null) {
+        // ========== THIS IS THE FIX ==========
+        // Populate ALL relevant controller state variables from storage
         token.value = savedToken;
+        loginAs.value = savedLoginAs;
+        currentUser.value = savedUser;
+        // ===================================
+
         print(
-            'Found saved token: ${savedToken.substring(0, Math.min(15, savedToken.length))}...');
-
-        // Load user from storage
-        final savedUser = await storageService.getUser();
-
-        // Load login type from storage
-        final savedLoginAs = await storageService.getLoginType();
-
-        if (savedUser != null && savedLoginAs != null) {
-          loginAs.value = savedLoginAs;
-          currentUser.value = savedUser;
-
-          print(
-              'User loaded from storage: ${savedUser.name}, roles: ${savedUser.roles}, login_as: ${loginAs.value}');
-          return true; // User is logged in
-        } else {
-          print('No saved user found despite having token, clearing data');
-          await _clearAllUserData();
-          return false;
-        }
+            '✅ User loaded from storage: ${savedUser.name}, roles: ${savedUser.roles}, login_as: ${loginAs.value}');
+        return true; // User is logged in and state is consistent
       } else {
-        print('No saved token found, user is not logged in');
+        print(
+            '⚠️ No saved user/loginAs found despite having a token. Clearing all data.');
         await _clearAllUserData();
         return false;
       }
     } catch (e) {
-      print('Error checking login status: $e');
+      print('❌ Error checking login status: $e');
       // Try to clean up any corrupted state
       await _clearAllUserData();
       return false;
     }
   }
 
-  // Helper method to clear all user data
+  // Helper method to clear all user data from memory and storage
   Future<void> _clearAllUserData() async {
     try {
       await storageService.clearAll();
@@ -279,8 +244,9 @@ class AuthController extends GetxController {
       loginAs.value = '';
       errorMessage.value = '';
       update(); // Force update GetX observers
+      print('✅ All user data cleared from state and storage.');
     } catch (e) {
-      print('Error clearing user data: $e');
+      print('❌ Error clearing all user data: $e');
       // Force clear memory even if storage fails
       token.value = '';
       currentUser.value = null;
@@ -296,29 +262,26 @@ class AuthController extends GetxController {
 
   // Check if user has a specific role
   bool hasRole(String role) {
-    final user = currentUser.value;
-    if (user == null) return false;
-    return user.roles.any((userRole) => userRole.name == role);
+    return currentUser.value?.roles.any((userRole) => userRole.name == role) ??
+        false;
   }
 
   // Get user's primary role (first in the list)
   String? getPrimaryRole() {
-    final user = currentUser.value;
-    if (user == null || user.roles.isEmpty) return null;
-    return user.roles.first.name;
+    if (currentUser.value == null || currentUser.value!.roles.isEmpty)
+      return null;
+    return currentUser.value!.roles.first.name;
   }
 
   // Get user display name
   String getUserName() {
-    final user = currentUser.value;
-    if (user == null) return 'User';
-    return user.name;
+    return currentUser.value?.name ?? 'User';
   }
 
   // Get user initials for avatar
   String getUserInitials() {
     final name = getUserName();
-    if (name.isEmpty) return 'U';
-    return name[0].toUpperCase();
+    if (name.isEmpty || name == 'User') return 'U';
+    return name.trim()[0].toUpperCase();
   }
 }

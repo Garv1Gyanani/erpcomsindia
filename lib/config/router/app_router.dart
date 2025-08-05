@@ -1,4 +1,5 @@
 import 'package:coms_india/client/deshboard.dart';
+import 'package:coms_india/client/navbar/clientnav.dart';
 import 'package:coms_india/features/employee/views/add_contact.dart';
 import 'package:coms_india/features/employee/views/education_details.dart';
 import 'package:coms_india/features/employee/views/employee_details.dart';
@@ -62,7 +63,7 @@ class AppRouter {
       GoRoute(
         path: '/client-dashboard',
         name: 'client-dashboard',
-        builder: (context, state) => const ClientDashboardPage(),
+        builder: (context, state) => const ClientNavBar(),
       ),
       GoRoute(
         path: '/team',

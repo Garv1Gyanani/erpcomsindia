@@ -120,7 +120,7 @@ class ClientDashboardPage extends StatelessWidget {
                 // _buildEmployeeOverview(controller),
 
                 // Employee Groups
-                _buildEmployeeGroups(controller),
+                // _buildEmployeeGroups(controller),
               ],
             ),
           ),
@@ -411,17 +411,12 @@ class ClientDashboardPage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _buildActionButton(
-                icon: Icons.download,
-                label: 'Export',
+                icon: Icons.emoji_people,
+                label: 'Employee',
                 color: Colors.blue,
                 onTap: () {
                   // Export functionality
-                  Get.snackbar(
-                    'Export',
-                    'Employee data export started',
-                    backgroundColor: Colors.blue.shade100,
-                    colorText: Colors.blue.shade800,
-                  );
+                  
                 },
               ),
               _buildActionButton(
@@ -667,232 +662,232 @@ class ClientDashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildEmployeeGroups(ClientDashboardController controller) {
-    if (controller.employeeGroups.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(40),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Icon(
-              Icons.people_outline,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No employees found',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey.shade600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Employee data will appear here once available',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade500,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      );
-    }
+  // Widget _buildEmployeeGroups(ClientDashboardController controller) {
+  //   if (controller.employeeGroups.isEmpty) {
+  //     return Container(
+  //       padding: const EdgeInsets.all(40),
+  //       decoration: BoxDecoration(
+  //         color: Colors.white,
+  //         borderRadius: BorderRadius.circular(16),
+  //         boxShadow: [
+  //           BoxShadow(
+  //             color: Colors.grey.withOpacity(0.1),
+  //             blurRadius: 10,
+  //             offset: const Offset(0, 4),
+  //           ),
+  //         ],
+  //       ),
+  //       child: Column(
+  //         children: [
+  //           Icon(
+  //             Icons.people_outline,
+  //             size: 64,
+  //             color: Colors.grey.shade400,
+  //           ),
+  //           const SizedBox(height: 16),
+  //           Text(
+  //             'No employees found',
+  //             style: TextStyle(
+  //               fontSize: 18,
+  //               fontWeight: FontWeight.w500,
+  //               color: Colors.grey.shade600,
+  //             ),
+  //           ),
+  //           const SizedBox(height: 8),
+  //           Text(
+  //             'Employee data will appear here once available',
+  //             style: TextStyle(
+  //               fontSize: 14,
+  //               color: Colors.grey.shade500,
+  //             ),
+  //             textAlign: TextAlign.center,
+  //           ),
+  //         ],
+  //       ),
+  //     );
+  //   }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'All Employees',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 16),
-        ...controller.employeeGroups.map((group) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Theme(
-              data: ThemeData().copyWith(dividerColor: Colors.transparent),
-              child: ExpansionTile(
-                tilePadding: const EdgeInsets.all(20),
-                childrenPadding: const EdgeInsets.only(bottom: 20),
-                title: Text(
-                  group.role,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    '${group.employees.length} employee${group.employees.length != 1 ? 's' : ''}',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-                leading: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${group.employees.length}',
-                    style: TextStyle(
-                      color: Colors.blue.shade600,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-                children: group.employees
-                    .map((employee) => _buildEmployeeCard(employee))
-                    .toList(),
-              ),
-            ),
-          );
-        }).toList(),
-      ],
-    );
-  }
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       const Text(
+  //         'All Employees',
+  //         style: TextStyle(
+  //           fontSize: 20,
+  //           fontWeight: FontWeight.bold,
+  //           color: Colors.black87,
+  //         ),
+  //       ),
+  //       const SizedBox(height: 16),
+  //       ...controller.employeeGroups.map((group) {
+  //         return Container(
+  //           margin: const EdgeInsets.only(bottom: 16),
+  //           decoration: BoxDecoration(
+  //             color: Colors.white,
+  //             borderRadius: BorderRadius.circular(16),
+  //             boxShadow: [
+  //               BoxShadow(
+  //                 color: Colors.grey.withOpacity(0.1),
+  //                 blurRadius: 10,
+  //                 offset: const Offset(0, 4),
+  //               ),
+  //             ],
+  //           ),
+  //           child: Theme(
+  //             data: ThemeData().copyWith(dividerColor: Colors.transparent),
+  //             child: ExpansionTile(
+  //               tilePadding: const EdgeInsets.all(20),
+  //               childrenPadding: const EdgeInsets.only(bottom: 20),
+  //               title: Text(
+  //                 group.role,
+  //                 style: const TextStyle(
+  //                   fontWeight: FontWeight.bold,
+  //                   fontSize: 16,
+  //                 ),
+  //               ),
+  //               subtitle: Padding(
+  //                 padding: const EdgeInsets.only(top: 4),
+  //                 child: Text(
+  //                   '${group.employees.length} employee${group.employees.length != 1 ? 's' : ''}',
+  //                   style: TextStyle(
+  //                     color: Colors.grey.shade600,
+  //                     fontSize: 14,
+  //                   ),
+  //                 ),
+  //               ),
+  //               leading: Container(
+  //                 padding: const EdgeInsets.all(12),
+  //                 decoration: BoxDecoration(
+  //                   color: Colors.blue.shade100,
+  //                   borderRadius: BorderRadius.circular(12),
+  //                 ),
+  //                 child: Text(
+  //                   '${group.employees.length}',
+  //                   style: TextStyle(
+  //                     color: Colors.blue.shade600,
+  //                     fontWeight: FontWeight.bold,
+  //                     fontSize: 16,
+  //                   ),
+  //                 ),
+  //               ),
+  //               children: group.employees
+  //                   .map((employee) => _buildEmployeeCard(employee))
+  //                   .toList(),
+  //             ),
+  //           ),
+  //         );
+  //       }).toList(),
+  //     ],
+  //   );
+  // }
 
-  Widget _buildEmployeeCard(
-    Employee employee,
-  ) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-      child: Card(
-        elevation: 0,
-        color: Colors.grey.shade50,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: Colors.grey.shade200),
-        ),
-        child: ListTile(
-          contentPadding: const EdgeInsets.all(16),
-          leading: CircleAvatar(
-            radius: 24,
-            backgroundColor: employee.gender == 'male'
-                ? Colors.blue.shade100
-                : Colors.pink.shade100,
-            child: Icon(
-              employee.gender == 'male' ? Icons.person : Icons.person_outline,
-              color: employee.gender == 'male'
-                  ? Colors.blue.shade600
-                  : Colors.pink.shade600,
-              size: 20,
-            ),
-          ),
-          title: Text(
-            employee.name,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
-          ),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.badge, size: 14, color: Colors.grey.shade600),
-                    const SizedBox(width: 4),
-                    Text(
-                      employee.employeeId,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.phone, size: 14, color: Colors.grey.shade600),
-                    const SizedBox(width: 4),
-                    Text(
-                      employee.phone,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          trailing: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: employee.status == 'active'
-                      ? Colors.green.shade100
-                      : Colors.red.shade100,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  employee.status.toUpperCase(),
-                  style: TextStyle(
-                    color: employee.status == 'active'
-                        ? Colors.green.shade700
-                        : Colors.red.shade700,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Icon(
-                Icons.chevron_right,
-                color: Colors.grey.shade400,
-                size: 20,
-              ),
-            ],
-          ),
-          onTap: () {
-            // _showEmployeeDetails(context, employee);
-          },
-        ),
-      ),
-    );
-  }
+  // Widget _buildEmployeeCard(
+  //   Employee employee,
+  // ) {
+  //   return Container(
+  //     margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+  //     child: Card(
+  //       elevation: 0,
+  //       color: Colors.grey.shade50,
+  //       shape: RoundedRectangleBorder(
+  //         borderRadius: BorderRadius.circular(12),
+  //         side: BorderSide(color: Colors.grey.shade200),
+  //       ),
+  //       child: ListTile(
+  //         contentPadding: const EdgeInsets.all(16),
+  //         leading: CircleAvatar(
+  //           radius: 24,
+  //           backgroundColor: employee.gender == 'male'
+  //               ? Colors.blue.shade100
+  //               : Colors.pink.shade100,
+  //           child: Icon(
+  //             employee.gender == 'male' ? Icons.person : Icons.person_outline,
+  //             color: employee.gender == 'male'
+  //                 ? Colors.blue.shade600
+  //                 : Colors.pink.shade600,
+  //             size: 20,
+  //           ),
+  //         ),
+  //         title: Text(
+  //           employee.name,
+  //           style: const TextStyle(
+  //             fontWeight: FontWeight.w600,
+  //             fontSize: 16,
+  //           ),
+  //         ),
+  //         subtitle: Padding(
+  //           padding: const EdgeInsets.only(top: 8),
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               Row(
+  //                 children: [
+  //                   Icon(Icons.badge, size: 14, color: Colors.grey.shade600),
+  //                   const SizedBox(width: 4),
+  //                   Text(
+  //                     employee.employeeId,
+  //                     style: TextStyle(
+  //                       color: Colors.grey.shade600,
+  //                       fontSize: 12,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //               const SizedBox(height: 4),
+  //               Row(
+  //                 children: [
+  //                   Icon(Icons.phone, size: 14, color: Colors.grey.shade600),
+  //                   const SizedBox(width: 4),
+  //                   Text(
+  //                     employee.phone,
+  //                     style: TextStyle(
+  //                       color: Colors.grey.shade600,
+  //                       fontSize: 12,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //         trailing: Column(
+  //           mainAxisAlignment: MainAxisAlignment.center,
+  //           children: [
+  //             Container(
+  //               padding:
+  //                   const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+  //               decoration: BoxDecoration(
+  //                 color: employee.status == 'active'
+  //                     ? Colors.green.shade100
+  //                     : Colors.red.shade100,
+  //                 borderRadius: BorderRadius.circular(20),
+  //               ),
+  //               child: Text(
+  //                 employee.status.toUpperCase(),
+  //                 style: TextStyle(
+  //                   color: employee.status == 'active'
+  //                       ? Colors.green.shade700
+  //                       : Colors.red.shade700,
+  //                   fontSize: 10,
+  //                   fontWeight: FontWeight.bold,
+  //                 ),
+  //               ),
+  //             ),
+  //             const SizedBox(height: 8),
+  //             Icon(
+  //               Icons.chevron_right,
+  //               color: Colors.grey.shade400,
+  //               size: 20,
+  //             ),
+  //           ],
+  //         ),
+  //         onTap: () {
+  //           // _showEmployeeDetails(context, employee);
+  //         },
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildErrorView(ClientDashboardController controller) {
     return Center(

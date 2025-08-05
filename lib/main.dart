@@ -19,7 +19,7 @@ void main() async {
   // Setup service locator first
   try {
     await setupServiceLocator();
-    
+
     print('✅ Service locator setup completed');
   } catch (e) {
     print('❌ Error setting up service locator: $e');
@@ -35,6 +35,8 @@ void main() async {
     // Register AttendanceController if not already registered in service locator
     if (!Get.isRegistered<AttendanceController>()) {
       Get.put(getIt<AttendanceController>());
+      Get.put(ClientDashboardController());
+
       print('✅ AttendanceController registered with GetX');
     }
   } catch (e) {
