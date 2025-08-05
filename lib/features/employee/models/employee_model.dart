@@ -145,7 +145,7 @@ class EmployeeRequestModel {
   final String emergencyContact;
   final String contactPersonName;
   final String emergencyContactRelation;
-  final String email;
+  final String? email;
   final String phone;
   final List<String> presentAddress;
   final List<String> permanentAddress;

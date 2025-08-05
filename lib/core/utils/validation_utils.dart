@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 
 class ValidationUtils {
   // Name field validation according to API requirements

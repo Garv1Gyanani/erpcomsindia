@@ -124,22 +124,18 @@ class _AssignShiftPageState extends State<AssignShiftPage> {
     }
   }
 
-  // Handle site selection change
   void _onSiteChanged(String? newSite) {
     setState(() {
       _selectedSite = newSite;
-      // Clear previous selections when site changes
       _selectedShiftIds.clear();
       _defaultShiftId = null;
     });
 
-    // Pre-select existing shifts for the new site
     if (newSite != null) {
       _preSelectExistingShifts();
     }
   }
 
-  // Clear all selections
   void _clearAllSelections() {
     setState(() {
       _selectedShiftIds.clear();

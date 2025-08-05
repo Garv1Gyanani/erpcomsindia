@@ -87,16 +87,16 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
     _witness2Controller.text = "Witness Two";
 
     // Pre-populate first EPF nominee with all required fields including DOB
-    nominees[0].nameController.text = "EPF Nominee Name";
-    nominees[0].addressController.text = "EPF Address 123";
-    nominees[0].relationshipController.text = "Wife";
+    nominees[0].nameController.text = "";
+    nominees[0].addressController.text = "";
+    nominees[0].relationshipController.text = "";
     nominees[0].dateOfBirth = DateTime(1985, 1, 1); // This was missing!
-    nominees[0].shareController.text = "100";
+    nominees[0].shareController.text = "";
 
     // Pre-populate first family member (EPS) with sample data
-    familyMembers[0].nameController.text = "EPS Nominee";
-    familyMembers[0].ageController.text = "45";
-    familyMembers[0].relationshipController.text = "Mother";
+    familyMembers[0].nameController.text = "";
+    familyMembers[0].ageController.text = "";
+    familyMembers[0].relationshipController.text = "";
 
     print('🚀 DEBUG: Nomination Form - Sample data pre-populated');
     print(
@@ -571,18 +571,15 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
           maxLines: maxLines,
           keyboardType: keyboardType,
           style: const TextStyle(fontSize: 16),
-          validator: isRequired
-              ? (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'This field is required';
-                  }
-                  return null;
-                }
-              : null,
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: const TextStyle(color: AppColors.gray400, fontSize: 14),
-            prefixIcon: Icon(icon, color: AppColors.gray500, size: 20),
+            prefixIcon: Padding(
+              // Added Padding
+              padding: const EdgeInsets.only(
+                  left: 16.0, right: 8.0), // Adjust padding as needed
+              child: Icon(icon, color: AppColors.gray500, size: 20),
+            ),
             filled: true,
             fillColor: AppColors.gray100,
             border: OutlineInputBorder(
@@ -833,6 +830,7 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
     print('🐛 DEBUG: This is the 8th and final screen!');
 
     if (!_formKey.currentState!.validate()) {
+      print('🐛 DEBUG: Form validation failed.');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Row(
@@ -862,12 +860,9 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
     List<String> validationIssues = [];
 
     // Check witness signatures (API requirement)
-    if (_witness1Signature == null) {
-      validationIssues.add('• Witness 1 signature file is required for API');
-    }
-    if (_witness2Signature == null) {
-      validationIssues.add('• Witness 2 signature file is required for API');
-    }
+
+    _witness1Signature ??= null;
+    _witness2Signature ??= null;
 
     // Check EPF nominee DOB (API requirement: epf.0.dob)
     bool hasValidEpfNominee = false;
@@ -880,10 +875,13 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
     if (!hasValidEpfNominee) {
       validationIssues
           .add('• At least one EPF nominee with date of birth is required');
+      print('🐛 DEBUG: No valid EPF nominee with DOB found.');
     }
 
     // Show detailed validation issues if any
     if (validationIssues.isNotEmpty) {
+      print(
+          '🐛 DEBUG: API validation issues found: ${validationIssues.join(', ')}');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Column(
@@ -964,6 +962,10 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
         'eps': epsFamily,
       };
 
+      // Log the nomination data before updating the provider
+      print(
+          '🐛 DEBUG: Nomination Data being sent to provider: $nominationData');
+
       print('🐛 DEBUG: EPF Nominees: ${epfNominees.length}');
       print('🐛 DEBUG: EPS Family Members: ${epsFamily.length}');
       print('🐛 DEBUG: Witness 1: ${_witness1Controller.text}');
@@ -979,6 +981,7 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
 
       // Show initial submission message and monitor API response
       if (mounted) {
+        print('🐛 DEBUG: Showing submission snackbar.');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Row(
@@ -1011,9 +1014,11 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
         );
 
         // Listen for provider status changes
+        print('🐛 DEBUG: Listening for API response.');
         _listenForAPIResponse(provider);
       }
     } catch (e) {
+      print('🐛 DEBUG: Error during submission: ${e.toString()}');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: ${e.toString()}')),
@@ -1023,9 +1028,16 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
   }
 
   void _listenForAPIResponse(EmployeeProvider provider) {
+    print('🐛 DEBUG: _listenForAPIResponse started.');
     // Use a listener to track provider state changes
     void statusListener() {
-      if (!mounted) return;
+      if (!mounted) {
+        print('🐛 DEBUG: statusListener - Component is not mounted, exiting.');
+        return;
+      }
+
+      print(
+          '🐛 DEBUG: statusListener - Current provider status: ${provider.status}');
 
       if (provider.status == EmployeeStatus.success) {
         // API call succeeded
@@ -1060,11 +1072,15 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
         // Navigate to home after short delay
         Future.delayed(const Duration(seconds: 1), () {
           if (mounted) {
+            print('🐛 DEBUG: Navigating to home.');
             context.goNamed('home');
+          } else {
+            print('🐛 DEBUG: Component unmounted, not navigating.');
           }
         });
 
         // Remove listener
+        print('🐛 DEBUG: Removing statusListener (success).');
         provider.removeListener(statusListener);
       } else if (provider.status == EmployeeStatus.error) {
         // API call failed
@@ -1099,6 +1115,7 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
               textColor: Colors.white,
               onPressed: () {
                 // Clear the error and allow user to try again
+                print('🐛 DEBUG: RETRY action pressed.');
                 provider.clearError();
               },
             ),
@@ -1106,16 +1123,19 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
         );
 
         // Remove listener
+        print('🐛 DEBUG: Removing statusListener (error).');
         provider.removeListener(statusListener);
       }
     }
 
     // Add listener and set a timeout
+    print('🐛 DEBUG: Adding statusListener to provider.');
     provider.addListener(statusListener);
 
     // Timeout after 30 seconds if no response
     Future.delayed(const Duration(seconds: 30), () {
       if (mounted && provider.status == EmployeeStatus.loading) {
+        print('🐛 DEBUG: Request timed out.');
         provider.removeListener(statusListener);
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1139,8 +1159,12 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
             margin: const EdgeInsets.all(16),
           ),
         );
+      } else {
+        print(
+            '🐛 DEBUG: Timeout reached, but condition not met (not mounted or not loading).  Mounted: $mounted, Status: ${provider.status}');
       }
     });
+    print('🐛 DEBUG: _listenForAPIResponse completed.');
   }
 
   @override

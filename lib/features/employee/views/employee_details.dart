@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:coms_india/core/services/storage_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
@@ -101,6 +102,22 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit, color: Colors.white),
+            onPressed: () {
+              if (_employeeDetails != null) {
+                context.push(
+                  '/employee/edit/${widget.userId}',
+                  extra: {
+                    'employeeName': widget.employeeName,
+                  },
+                );
+              }
+            },
+            tooltip: 'Edit Employee',
+          ),
+        ],
       ),
       body: _buildBody(),
     );
@@ -571,9 +588,9 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
                   errorBuilder: (context, error, stackTrace) {
                     return Center(
                       child: Icon(
-                        Icons.description,
+                        Icons.image_not_supported_outlined,
                         size: 40,
-                        color: Colors.red.shade300,
+                        color: Colors.grey.shade400,
                       ),
                     );
                   },
@@ -952,6 +969,23 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
                             (event.expectedTotalBytes ?? 1),
                   ),
                 ),
+                errorBuilder: (context, error, stackTrace) => const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.image_not_supported_outlined,
+                        size: 60,
+                        color: Colors.grey,
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'Image not available',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -964,18 +998,15 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     try {
-      // 1. Check for and request storage permission
       final status = await Permission.storage.request();
 
       if (!status.isGranted) {
-        // If permission is denied, show a message.
         scaffoldMessenger.showSnackBar(
           const SnackBar(content: Text('Storage permission denied.')),
         );
         return;
       }
 
-      // 2. Get the downloads directory
       Directory? downloadsDirectory;
       if (Platform.isIOS) {
         downloadsDirectory = await getApplicationDocumentsDirectory();
@@ -991,7 +1022,6 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
         return;
       }
 
-      // 3. Prepare file path
       final fileExtension = url.split('.').last.split('?').first;
       final sanitizedFileName = fileName.replaceAll(RegExp(r'[\/\\]'), '_');
       final uniqueFileName = '$sanitizedFileName.$fileExtension';
@@ -1001,7 +1031,6 @@ class _EmployeeDetailsPageState extends State<EmployeeDetailsPage> {
         SnackBar(content: Text('Downloading $fileName...')),
       );
 
-      // 4. Download file
       final dio = Dio();
       await dio.download(url, savePath);
 

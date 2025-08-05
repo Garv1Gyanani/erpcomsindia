@@ -50,6 +50,17 @@ class _EmploymentDetailsSectionState extends State<EmploymentDetailsSection> {
   void initState() {
     super.initState();
     _loadApiData();
+    _loadExistingData();
+
+    // Add listeners *after* loading existing data
+    _punchingCodeController.addListener(_updateFormData);
+  }
+
+  @override
+  void dispose() {
+    _punchingCodeController.removeListener(_updateFormData);
+    _punchingCodeController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadApiData() async {
@@ -141,6 +152,47 @@ class _EmploymentDetailsSectionState extends State<EmploymentDetailsSection> {
     }
   }
 
+  Future<void> _loadExistingData() async {
+    final provider = Provider.of<EmployeeProvider>(context, listen: false);
+    final employmentData = provider.getScreenData('employment_details');
+
+    if (employmentData != null) {
+      _punchingCodeController.text = employmentData['punching_code'] ?? '';
+
+      // Load selected objects based on IDs
+      try {
+        _selectedDepartment = _departments.firstWhere(
+            (dept) => dept.id.toString() == employmentData['department_id']);
+        _availableDesignations = _selectedDepartment?.designations ?? [];
+        _selectedDesignation = _availableDesignations.firstWhere(
+            (designation) =>
+                designation.id.toString() == employmentData['designation_id']);
+        _selectedSite = _sites.firstWhere(
+            (site) => site.id.toString() == employmentData['site_id']);
+        _selectedLocation = _locations.firstWhere(
+            (location) => location.id.toString() == employmentData['location']);
+        _selectedModeOfJoining = employmentData['joining_mode'];
+      } catch (e) {
+        print('❌ DEBUG: Error loading existing data: $e');
+      }
+    }
+  }
+
+  void _updateFormData() {
+    final provider = Provider.of<EmployeeProvider>(context, listen: false);
+
+    final employmentData = {
+      'department_id': _selectedDepartment?.id.toString(),
+      'designation_id': _selectedDesignation?.id.toString(),
+      'site_id': _selectedSite?.id.toString(),
+      'location': _selectedLocation?.id.toString(),
+      'joining_mode': _selectedModeOfJoining,
+      'punching_code': _punchingCodeController.text,
+    };
+
+    provider.updateFormData('employment_details', employmentData);
+  }
+
   Future<void> _submitEmploymentDetails() async {
     print('🐛 DEBUG: ===== EMPLOYMENT DETAILS FORM SUBMISSION =====');
     print('🐛 DEBUG: Department ID: ${_selectedDepartment?.id}');
@@ -213,13 +265,8 @@ class _EmploymentDetailsSectionState extends State<EmploymentDetailsSection> {
       _selectedDepartment = department;
       _selectedDesignation = null;
       _availableDesignations = department?.designations ?? [];
+      _updateFormData();
     });
-  }
-
-  @override
-  void dispose() {
-    _punchingCodeController.dispose();
-    super.dispose();
   }
 
   Widget _buildLabel(String text, {bool isRequired = false}) {
@@ -346,8 +393,12 @@ class _EmploymentDetailsSectionState extends State<EmploymentDetailsSection> {
                     value: _selectedDesignation,
                     items: _availableDesignations,
                     itemBuilder: (designation) => designation.name,
-                    onChanged: (value) =>
-                        setState(() => _selectedDesignation = value),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedDesignation = value;
+                        _updateFormData();
+                      });
+                    },
                     placeholder: 'Select Designation',
                     isLoading: false,
                   ),
@@ -360,7 +411,12 @@ class _EmploymentDetailsSectionState extends State<EmploymentDetailsSection> {
                     value: _selectedSite,
                     items: _sites,
                     itemBuilder: (site) => site.name,
-                    onChanged: (value) => setState(() => _selectedSite = value),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedSite = value;
+                        _updateFormData();
+                      });
+                    },
                     placeholder: 'Select Site',
                     isLoading: _isLoadingSites,
                   ),
@@ -373,8 +429,12 @@ class _EmploymentDetailsSectionState extends State<EmploymentDetailsSection> {
                     value: _selectedLocation,
                     items: _locations,
                     itemBuilder: (location) => location.name,
-                    onChanged: (value) =>
-                        setState(() => _selectedLocation = value),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedLocation = value;
+                        _updateFormData();
+                      });
+                    },
                     placeholder: 'Select Location',
                     isLoading: _isLoadingLocations,
                   ),
@@ -387,8 +447,12 @@ class _EmploymentDetailsSectionState extends State<EmploymentDetailsSection> {
                     value: _selectedModeOfJoining,
                     items: _modeOfJoiningOptions,
                     itemBuilder: (mode) => mode.toUpperCase(),
-                    onChanged: (value) =>
-                        setState(() => _selectedModeOfJoining = value),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedModeOfJoining = value;
+                        _updateFormData();
+                      });
+                    },
                     placeholder: 'Select Mode',
                     isLoading: false,
                   ),
@@ -401,7 +465,7 @@ class _EmploymentDetailsSectionState extends State<EmploymentDetailsSection> {
                   //   placeholder: 'Enter Punching Code',
                   //   isRequired: true,
                   // ),
-                  const SizedBox(height: 40),
+                  // const SizedBox(height: 40),
 
                   // Submit Button
                   Row(
@@ -512,6 +576,9 @@ class _EmploymentDetailsSectionState extends State<EmploymentDetailsSection> {
                   return null;
                 }
               : null,
+          onChanged: (value) {
+            _updateFormData();
+          },
         ),
       ],
     );

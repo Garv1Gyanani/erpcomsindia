@@ -6,7 +6,7 @@ import '../controllers/employee_provider.dart';
 import '../../../core/utils/validation_utils.dart';
 
 class EsicDeclarationForm extends StatefulWidget {
-  const EsicDeclarationForm({super.key});
+  const EsicDeclarationForm({Key? key}) : super(key: key);
 
   @override
   State<EsicDeclarationForm> createState() => _EsicDeclarationFormState();
@@ -26,16 +26,16 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
     super.initState();
 
     // Pre-populate fields with sample data for easy testing
-    _insuranceNoController.text = "ESI12345";
-    _branchOfficeController.text = "Central Office";
-    _dispensaryController.text = "City Health Center";
+    _insuranceNoController.text = "";
+    _branchOfficeController.text = "";
+    _dispensaryController.text = "";
 
-    // Pre-populate first family member
-    familyMembers[0].nameController.text = "Tommy Doe";
-    familyMembers[0].dobController.text = "2015-06-01";
-    familyMembers[0].relationshipController.text = "Son";
-    familyMembers[0].residing = "Yes";
-    familyMembers[0].residenceController.text = "With Parents";
+    // Initialize first family member's data
+    familyMembers[0].nameController.text = "";
+    familyMembers[0].dobController.text = "";
+    familyMembers[0].relationshipController.text = "";
+    familyMembers[0].residing = "Yes"; // Default to "Yes"
+    familyMembers[0].residenceController.text = "";
 
     _setupDebugListeners();
     print('🐛 DEBUG: ESIC Declaration Form initialized with sample data');
@@ -208,15 +208,6 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
                       label: '1. Insurance No.',
                       hint: 'e.g. 1234567890',
                       maxLength: 20,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Insurance number is required';
-                        }
-                        if (value.length < 6) {
-                          return 'Enter at least 6 digits';
-                        }
-                        return null;
-                      },
                     ),
                     const SizedBox(height: 16),
                     _buildTextField(
@@ -224,12 +215,6 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
                       label: 'Branch Office',
                       hint: 'e.g. Mumbai Central',
                       maxLength: 30,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Branch office is required';
-                        }
-                        return null;
-                      },
                     ),
                     const SizedBox(height: 16),
                     _buildTextField(
@@ -237,12 +222,6 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
                       label: 'Dispensary',
                       hint: 'e.g. ESIC Dispensary No. 5',
                       maxLength: 30,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Dispensary is required';
-                        }
-                        return null;
-                      },
                     ),
                   ],
                 );
@@ -257,15 +236,6 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
                         label: '1. Insurance No.',
                         hint: 'e.g. 1234567890',
                         maxLength: 20,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Insurance number is required';
-                          }
-                          if (value.length < 6) {
-                            return 'Enter at least 6 digits';
-                          }
-                          return null;
-                        },
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -276,12 +246,6 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
                         label: 'Branch Office',
                         hint: 'e.g. Mumbai Central',
                         maxLength: 30,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Branch office is required';
-                          }
-                          return null;
-                        },
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -292,12 +256,6 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
                         label: 'Dispensary',
                         hint: 'e.g. ESIC Dispensary No. 5',
                         maxLength: 30,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Dispensary is required';
-                          }
-                          return null;
-                        },
                       ),
                     ),
                   ],
@@ -448,7 +406,7 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
           );
         } else {
           // Desktop layout - use table
-          return _buildDesktopTable();
+          return _buildDesktopTable(); // You’ll define this separately
         }
       },
     );
@@ -494,15 +452,6 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
             label: 'Name',
             hint: 'e.g. Ramesh Kumar',
             maxLength: 30,
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Name is required';
-              }
-              if (value.length < 2) {
-                return 'Enter a valid name';
-              }
-              return null;
-            },
           ),
           const SizedBox(height: 12),
           _buildTextField(
@@ -530,12 +479,6 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
             label: 'Relationship with Employee',
             hint: 'e.g. Spouse, Child, Parent',
             maxLength: 20,
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Relationship is required';
-              }
-              return null;
-            },
           ),
           const SizedBox(height: 12),
           Column(
@@ -551,7 +494,8 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: member.residing,
+                value: member
+                    .residing, // Use the stored value, which defaults to "Yes"
                 decoration: InputDecoration(
                   filled: true,
                   fillColor: AppColors.gray100,
@@ -577,7 +521,8 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
                 ],
                 onChanged: (value) {
                   setState(() {
-                    member.residing = value ?? 'Yes';
+                    member.residing =
+                        value ?? 'Yes'; // Ensure a value is always set
                   });
                   print(
                       '🐛 DEBUG: Family member residing status changed to: $value');
@@ -780,7 +725,7 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
           Expanded(
             flex: 2,
             child: DropdownButtonFormField<String>(
-              value: member.residing,
+              value: member.residing, // Correctly using the stored value.
               decoration: const InputDecoration(
                 isDense: true,
                 border: OutlineInputBorder(),
@@ -793,7 +738,7 @@ class _EsicDeclarationFormState extends State<EsicDeclarationForm> {
               ],
               onChanged: (value) {
                 setState(() {
-                  member.residing = value ?? 'Yes';
+                  member.residing = value ?? 'Yes'; // Ensure value is set.
                 });
                 print(
                     '🐛 DEBUG: Desktop table - Family member residing status changed to: $value');
@@ -1001,7 +946,7 @@ class FamilyMember {
   final TextEditingController dobController = TextEditingController();
   final TextEditingController relationshipController = TextEditingController();
   final TextEditingController residenceController = TextEditingController();
-  String residing = 'Yes';
+  String residing = 'Yes'; // Default value is now set here.
 
   void dispose() {
     nameController.dispose();

@@ -42,6 +42,12 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
       color: Colors.purple,
     ),
     MenuItemData(
+      id: 5,
+      title: 'weekendlist',
+      icon: Icons.weekend,
+      color: Colors.black,
+    ),
+    MenuItemData(
       id: 4,
       title: 'Assign Shift',
       icon: Icons.assignment_ind,
@@ -526,10 +532,16 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
         // Handle navigation based on menu item
         if (item.title == 'Sites List') {
           context.goNamed('employees');
+        } else if (item.title == 'Attendance') {
+          context.goNamed('attendance');
         } else if (item.title == 'Shift Management') {
+          context.goNamed('shifts');
+        } else if (item.title == 'Weekend Management') {
           context.goNamed('shifts');
         } else if (item.title == 'Assign Shift') {
           context.goNamed('site-shifts');
+        } else if (item.title == 'weekendlist') {
+          context.goNamed('weekendlist');
         }
         // Add other menu item navigations here if needed
       },

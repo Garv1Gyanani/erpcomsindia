@@ -83,15 +83,15 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
   void initState() {
     super.initState();
     // Pre-populate fields with sample data for easy testing
-    _aadharController.text = "123456789012";
-    _panController.text = "ABCDE1234F";
-    _uanController.text = "UAN12345678";
-    _pfController.text = "PF987654321";
-    _esicController.text = "ESI12345";
-    _bankNameController.text = "HDFC Bank";
-    _accountController.text = "1234567890";
-    _ifscController.text = "HDFC0001234";
-    _remarksController.text = "This is a sample remark.";
+    _aadharController.text = "";
+    _panController.text = "";
+    _uanController.text = "";
+    _pfController.text = "";
+    _esicController.text = "";
+    _bankNameController.text = "";
+    _accountController.text = "";
+    _ifscController.text = "";
+    _remarksController.text = "";
 
     // Pre-populate first document with sample data
     otherDocuments[0].nameController.text = "Experience Letter";
@@ -214,29 +214,11 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
           const SizedBox(height: 12),
           _buildTextFormField(
             controller: _panController,
-            label: 'PAN Number *',
+            label: 'PAN Number', // Removed asterisk, making it optional
             hint: 'Enter PAN Number (10 characters)',
             sample: 'Sample: ABCDE1234F',
             textCapitalization: TextCapitalization.characters,
             maxLength: 10,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'PAN number is required';
-              }
-              if (value.length != 10) {
-                return 'PAN must be 10 characters';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: 16),
-          _buildTextFormField(
-            controller: _uanController,
-            label: 'UAN Number',
-            hint: 'Enter UAN Number (12 digits)',
-            sample: 'Sample: 123456789012',
-            keyboardType: TextInputType.number,
-            maxLength: 12,
           ),
           const SizedBox(height: 16),
           _buildTextFormField(
@@ -1186,9 +1168,7 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
     if (_aadharBackImage == null) {
       missingDocuments.add('Aadhar Card Back');
     }
-    if (_panCardImage == null) {
-      missingDocuments.add('PAN Card');
-    }
+    // PAN Card image is no longer mandatory
     if (_bankPassbookImage == null) {
       missingDocuments.add('Bank Passbook/Cheque');
     }
@@ -1213,9 +1193,8 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
     if (_aadharController.text.trim().isEmpty) {
       missingFields.add('Aadhar Number');
     }
-    if (_panController.text.trim().isEmpty) {
-      missingFields.add('PAN Number');
-    }
+
+    // pan card is no longer required
     if (_bankNameController.text.trim().isEmpty) {
       missingFields.add('Bank Name');
     }
@@ -1250,7 +1229,7 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
     final provider = context.read<EmployeeProvider>();
     final govtBankData = {
       'aadhar': _aadharController.text,
-      'pan': _panController.text,
+      'pan': _panController.text, // PAN is nullable now
       'uan_number': _uanController.text,
       'pf_member_id': _pfController.text,
       'esic_number': _esicController.text,
@@ -1260,7 +1239,7 @@ class _GovernmentBankFormState extends State<GovernmentBankForm> {
       'remarks': _remarksController.text,
       'aadhar_front': _aadharFrontImage,
       'aadhar_back': _aadharBackImage,
-      'pan_file': _panCardImage,
+      'pan_file': _panCardImage, // PAN Card image is nullable now
       'bank_document': _bankPassbookImage,
       'employee_image': _employeePhotoImage,
       'signature_thumb': _employeeSignatureImage,

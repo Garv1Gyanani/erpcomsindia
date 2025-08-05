@@ -62,20 +62,20 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
     _emergencyContactRelationController.text = "Brother";
 
     // Pre-populate present address
-    presentControllers['Street Address']?.text = "123 Main St";
-    presentControllers['City']?.text = "Apt 4B";
-    presentControllers['District']?.text = "Central District";
-    presentControllers['Post Office']?.text = "Main PO";
-    presentControllers['Thana']?.text = "City Police Station";
-    presentControllers['Pincode']?.text = "110001";
+    presentControllers['Street Address']?.text = "";
+    presentControllers['City']?.text = "";
+    presentControllers['District']?.text = "";
+    presentControllers['Post Office']?.text = "";
+    presentControllers['Thana']?.text = "";
+    presentControllers['Pincode']?.text = "";
 
     // Pre-populate permanent address
-    permanentControllers['Street Address']?.text = "456 Secondary Rd";
-    permanentControllers['City']?.text = "Floor 2";
-    permanentControllers['District']?.text = "Secondary District";
-    permanentControllers['Post Office']?.text = "Secondary PO";
-    permanentControllers['Thana']?.text = "Secondary Police Station";
-    permanentControllers['Pincode']?.text = "110002";
+    permanentControllers['Street Address']?.text = "";
+    permanentControllers['City']?.text = "";
+    permanentControllers['District']?.text = "";
+    permanentControllers['Post Office']?.text = "";
+    permanentControllers['Thana']?.text = "";
+    permanentControllers['Pincode']?.text = "";
 
     print('🚀 DEBUG: Contact Details - Sample data pre-populated');
   }
@@ -163,34 +163,34 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
                     context: context,
                     label: 'Email',
                     hintText: 'Email Address',
-                    isRequired: true,
+                    isRequired: false,
                     controller: _emailController,
                     maxLength: maxEmailLength,
                     keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Email is required';
-                      }
-                      if (value.length > maxEmailLength) {
-                        return 'Email too long';
-                      }
-                      if (!RegExp(
-                              r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
-                          .hasMatch(value)) {
-                        return 'Enter a valid email format';
-                      }
-                      // Additional email format validation
-                      if (!value.contains('@') || !value.contains('.')) {
-                        return 'Email must contain @ and . symbols';
-                      }
-                      if (value.startsWith('.') ||
-                          value.endsWith('.') ||
-                          value.startsWith('@') ||
-                          value.endsWith('@')) {
-                        return 'Invalid email format';
-                      }
-                      return null;
-                    },
+                    //   validator: (value) {
+                    //     if (value == null || value.trim().isEmpty) {
+                    //       return 'Email is required';
+                    //     }
+                    //     if (value.length > maxEmailLength) {
+                    //       return 'Email too long';
+                    //     }
+                    //     if (!RegExp(
+                    //             r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+                    //         .hasMatch(value)) {
+                    //       return 'Enter a valid email format';
+                    //     }
+                    //     // Additional email format validation
+                    //     if (!value.contains('@') || !value.contains('.')) {
+                    //       return 'Email must contain @ and . symbols';
+                    //     }
+                    //     if (value.startsWith('.') ||
+                    //         value.endsWith('.') ||
+                    //         value.startsWith('@') ||
+                    //         value.endsWith('@')) {
+                    //       return 'Invalid email format';
+                    //     }
+                    //     return null;
+                    //   },
                   ),
                   SizedBox(height: 12),
                   _buildLabeledTextField(
@@ -210,6 +210,26 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
                       }
                       if (value.length != maxEmergencyContactLength) {
                         return 'Enter a valid 10-digit number';
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(
+                    height: 12,
+                  ),
+                  _buildLabeledTextField(
+                    context: context,
+                    label: 'Relationship with Emergency Contact',
+                    hintText: 'Relationship',
+                    isRequired: true,
+                    controller: _emergencyContactRelationController,
+                    maxLength: maxNameLength,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Relationship is required';
+                      }
+                      if (value.length > maxNameLength) {
+                        return 'Relationship too long';
                       }
                       return null;
                     },
@@ -272,26 +292,6 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
               ),
               SizedBox(height: 16),
 
-              // Relationship Field
-              _buildLabeledTextField(
-                context: context,
-                label: 'Relationship with Emergency Contact',
-                hintText: 'Relationship',
-                isRequired: true,
-                controller: _emergencyContactRelationController,
-                maxLength: maxNameLength,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Relationship is required';
-                  }
-                  if (value.length > maxNameLength) {
-                    return 'Relationship too long';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 10),
-
               // Submit Button
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -308,7 +308,11 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      onPressed: _submitForm,
+                      onPressed: () {
+                        if (_validateAddressFields()) {
+                          _submitForm();
+                        }
+                      },
                       child: const Text(
                         'Continue to Education Details',
                         style: TextStyle(
@@ -485,6 +489,38 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
     );
   }
 
+  bool _validateAddressFields() {
+    bool isValid = true;
+
+    // Validate present address fields
+    presentControllers.forEach((key, controller) {
+      if (controller.text.isEmpty) {
+        isValid = false;
+        // Show snackbar or error message for empty field
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please fill in the Present Address $key')),
+        );
+        return; // Exit iteration if any field is empty
+      }
+    });
+
+    if (!isValid) return false; // If any present address field is empty, return
+
+    // Validate permanent address fields
+    permanentControllers.forEach((key, controller) {
+      if (controller.text.isEmpty) {
+        isValid = false;
+        // Show snackbar or error message for empty field
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please fill in the Permanent Address $key')),
+        );
+        return; // Exit iteration if any field is empty
+      }
+    });
+
+    return isValid; // Return true if all fields are valid
+  }
+
   void _submitForm() {
     if (!_formKey.currentState!.validate()) {
       // If form is not valid, do not proceed
@@ -500,31 +536,37 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
     print(
         '🐛 DEBUG: Emergency Contact Relation: ${_emergencyContactRelationController.text}');
 
-    // Debug present address
-    final presentAddressList = presentControllers.values
-        .map((c) => c.text)
-        .where((text) => text.isNotEmpty)
-        .toList();
-    print('🐛 DEBUG: Present Address: ${presentAddressList.join(', ')}');
+    // Create present address map
+    final presentAddressMap = {
+      'street': presentControllers['Street Address']!.text,
+      'city': presentControllers['City']!.text,
+      'district': presentControllers['District']!.text,
+      'post_office': presentControllers['Post Office']!.text,
+      'thana': presentControllers['Thana']!.text,
+      'pincode': presentControllers['Pincode']!.text,
+    };
 
-    // Debug permanent address
-    final permanentAddressList = permanentControllers.values
-        .map((c) => c.text)
-        .where((text) => text.isNotEmpty)
-        .toList();
-    print('🐛 DEBUG: Permanent Address: ${permanentAddressList.join(', ')}');
+    // Create permanent address map
+    final permanentAddressMap = {
+      'street': permanentControllers['Street Address']!.text,
+      'city': permanentControllers['City']!.text,
+      'district': permanentControllers['District']!.text,
+      'post_office': permanentControllers['Post Office']!.text,
+      'thana': permanentControllers['Thana']!.text,
+      'pincode': permanentControllers['Pincode']!.text,
+    };
 
     // Update provider with contact details data
     final provider = context.read<EmployeeProvider>();
     final contactData = {
       'phone': _phoneController.text,
-      'email': _emailController.text,
+      'email': _emailController.text.isEmpty ? null : _emailController.text,
       'emergency_contact': _emergencyContactController.text,
       'contact_person_name': _emergencyContactPersonController
           .text, // API uses 'contactPersionName'
       'emergency_contact_relation': _emergencyContactRelationController.text,
-      'present_address': presentAddressList,
-      'permanent_address': permanentAddressList,
+      'present_address': [presentAddressMap], // Wrap in a list
+      'permanent_address': [permanentAddressMap], // Wrap in a list
     };
 
     provider.updateFormData('contact_details', contactData);

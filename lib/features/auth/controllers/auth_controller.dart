@@ -1,7 +1,9 @@
 import 'dart:math' as Math;
+import 'package:coms_india/features/attendance/controllers/attendance_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../core/di/service_locator.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/storage_service.dart';
@@ -9,61 +11,18 @@ import '../models/user_model.dart';
 
 class AuthController extends GetxController {
   final ApiService _apiService = getIt<ApiService>();
-  final StorageService _storageService = getIt<StorageService>();
+  final StorageService storageService = getIt<StorageService>();
 
   final RxBool isLoading = false.obs;
   final RxString errorMessage = ''.obs;
   final Rx<UserModel?> currentUser = Rx<UserModel?>(null);
   final RxString token = ''.obs;
+  final RxString loginAs = ''.obs; // Track login type: 'client' or 'employee'
 
   @override
   void onInit() {
     super.onInit();
     checkLoginStatus();
-  }
-
-  // Check if user is already logged in
-  Future<bool> checkLoginStatus() async {
-    print('Checking login status...');
-    try {
-      // Load token
-      final savedToken = await _storageService.getToken();
-
-      if (savedToken != null && savedToken.isNotEmpty) {
-        token.value = savedToken;
-        print(
-            'Found saved token: ${savedToken.substring(0, Math.min(15, savedToken.length))}...');
-
-        // Load user from storage
-        final savedUser = await _storageService.getUser();
-        if (savedUser != null) {
-          currentUser.value = savedUser;
-          print(
-              'User loaded from storage: ${savedUser.name}, roles: ${savedUser.roles}');
-          return true; // User is logged in
-        } else {
-          print('No saved user found despite having token');
-          // Token exists but no user data, clear token
-          await _storageService.clearAll();
-          token.value = '';
-        }
-      } else {
-        print('No saved token found, user is not logged in');
-      }
-
-      return false; // User is not logged in
-    } catch (e) {
-      print('Error checking login status: $e');
-      // Try to clean up any corrupted state
-      try {
-        await _storageService.clearAll();
-        token.value = '';
-        currentUser.value = null;
-      } catch (_) {
-        // Ignore cleanup errors
-      }
-      return false;
-    }
   }
 
   // Request OTP for mobile number
@@ -129,9 +88,13 @@ class AuthController extends GetxController {
       if (responseData['status'] == true) {
         // Get token
         final authToken = responseData['token'] as String?;
+        final userLoginAs =
+            responseData['login_as'] as String?; // Get login type
+
         if (authToken != null && responseData['user'] != null) {
-          // Save token
+          // Save token and login type
           token.value = authToken;
+          loginAs.value = userLoginAs ?? '';
 
           // Parse user data
           final userData = responseData['user'] as Map<String, dynamic>;
@@ -162,19 +125,24 @@ class AuthController extends GetxController {
           // Save to memory
           currentUser.value = user;
 
-          // Save to storage
-          await _storageService.saveAuthData(
+          // Save to storage including login type
+          await storageService.saveAuthData(
             authToken,
             user,
             tokenType: responseData['token_type'] ?? 'Bearer',
             expiresIn: responseData['expires_in'] ?? 3600,
+            loginAs: userLoginAs, // Save login type
           );
 
           isLoading.value = false;
 
-          // Navigate to team (which has bottom navigation)
+          // Navigate based on login type
           if (context.mounted) {
-            context.go('/team');
+            if (userLoginAs == 'client') {
+              context.go('/client-dashboard');
+            } else {
+              context.go('/team');
+            }
           }
 
           return true;
@@ -198,78 +166,139 @@ class AuthController extends GetxController {
   }
 
   // Logout user
+// Logout user - Updated method for AuthController
+// Logout user - Fixed version
+// Logout user - Final Fixed Version
   Future<void> logout(BuildContext context) async {
-    isLoading.value = true;
-
     try {
       print('Starting logout process...');
 
-      // Get the token from current value
-      final currentToken = token.value;
-
-      if (currentToken.isNotEmpty) {
-        try {
-          print(
-              'Calling logout API with token: ${currentToken.substring(0, Math.min(15, currentToken.length))}...');
-
-          // Call the logout API
-          final response = await _apiService.logout(currentToken);
-
-          if (response.statusCode == 200) {
-            print('Logout API call successful: ${response.data['message']}');
-          } else {
-            print('Logout API returned non-200 status: ${response.statusCode}');
-          }
-        } catch (e) {
-          print('Error calling logout API: $e');
-          // Continue with local logout even if API call fails
-        }
-      } else {
-        print('No token available for logout');
-      }
-
-      // Clear data from memory
-      print('Clearing user data from memory');
+      // IMMEDIATELY clear memory variables FIRST - before any async operations
+      print('Clearing user data from memory IMMEDIATELY');
       token.value = '';
       currentUser.value = null;
       errorMessage.value = '';
+      loginAs.value = '';
+
+      // Clear attendance controller if it exists
+      try {
+        if (Get.isRegistered<AttendanceController>()) {
+          final attendanceController = Get.find<AttendanceController>();
+          attendanceController.clearAllData();
+          print('✅ AttendanceController data cleared');
+        } else {
+          print('ℹ️ AttendanceController not registered, skipping clear');
+        }
+      } catch (e) {
+        print('⚠️ Error clearing AttendanceController (non-critical): $e');
+      }
 
       // Clear data from storage
       print('Clearing user data from storage');
-      final clearResult = await _storageService.clearAll();
+      final clearResult = await storageService.clearAll();
       print('Storage cleared: $clearResult');
 
-      isLoading.value = false;
-
-      // Navigate to login screen
-      print('Navigating to login screen');
-      if (context.mounted) {
-        try {
-          context.go('/login');
-          print('Navigation to login successful');
-        } catch (e) {
-          print('Error navigating with GoRouter: $e');
-          if (context.mounted) {
-            Navigator.of(context)
-                .pushNamedAndRemoveUntil('/login', (route) => false);
-          }
-        }
-      }
+      GoRouter.of(context).refresh();
     } catch (e) {
       print('Error during logout: $e');
-      isLoading.value = false;
-      if (context.mounted) {
-        context.go('/login');
-      }
-      rethrow;
+
+      // Force clear everything even on error - IMMEDIATELY
+      token.value = '';
+      currentUser.value = null;
+      errorMessage.value = '';
+      loginAs.value = '';
+      update();
+
+      GoRouter.of(context).refresh();
     }
+  }
+
+  // Check if user is already logged in
+  Future<bool> checkLoginStatus() async {
+    print('Checking login status...');
+    try {
+      // First check if memory state indicates logged out
+      if (currentUser.value == null || token.value.isEmpty) {
+        print('Memory state indicates user is logged out');
+        return false;
+      }
+
+      // Load token from storage
+      final savedToken = await storageService.getToken();
+
+      if (savedToken != null && savedToken.isNotEmpty) {
+        // Verify token is still valid
+        final isTokenValid = await storageService.isTokenValid();
+        if (!isTokenValid) {
+          print('Token is expired, clearing all data');
+          await _clearAllUserData();
+          return false;
+        }
+
+        token.value = savedToken;
+        print(
+            'Found saved token: ${savedToken.substring(0, Math.min(15, savedToken.length))}...');
+
+        // Load user from storage
+        final savedUser = await storageService.getUser();
+
+        // Load login type from storage
+        final savedLoginAs = await storageService.getLoginType();
+
+        if (savedUser != null && savedLoginAs != null) {
+          loginAs.value = savedLoginAs;
+          currentUser.value = savedUser;
+
+          print(
+              'User loaded from storage: ${savedUser.name}, roles: ${savedUser.roles}, login_as: ${loginAs.value}');
+          return true; // User is logged in
+        } else {
+          print('No saved user found despite having token, clearing data');
+          await _clearAllUserData();
+          return false;
+        }
+      } else {
+        print('No saved token found, user is not logged in');
+        await _clearAllUserData();
+        return false;
+      }
+    } catch (e) {
+      print('Error checking login status: $e');
+      // Try to clean up any corrupted state
+      await _clearAllUserData();
+      return false;
+    }
+  }
+
+  // Helper method to clear all user data
+  Future<void> _clearAllUserData() async {
+    try {
+      await storageService.clearAll();
+      token.value = '';
+      currentUser.value = null;
+      loginAs.value = '';
+      errorMessage.value = '';
+      update(); // Force update GetX observers
+    } catch (e) {
+      print('Error clearing user data: $e');
+      // Force clear memory even if storage fails
+      token.value = '';
+      currentUser.value = null;
+      loginAs.value = '';
+      errorMessage.value = '';
+    }
+  }
+
+  // Check if user is a client
+  bool isClient() {
+    return loginAs.value == 'client';
   }
 
   // Check if user has a specific role
   bool hasRole(String role) {
     final user = currentUser.value;
     if (user == null) return false;
-    return user.roles.contains(role);
+    return user.roles.any((userRole) => userRole.name == role);
   }
 
   // Get user's primary role (first in the list)

@@ -1,9 +1,12 @@
 import 'package:coms_india/core/constants/app_colors.dart';
+import 'package:coms_india/core/services/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../controllers/employee_provider.dart';
 import '../../../core/utils/validation_utils.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class FamilyMemberUI {
   TextEditingController nameController = TextEditingController();
@@ -30,7 +33,6 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
   int currentStep = 0;
 
   final _nameController = TextEditingController();
-  final _idController = TextEditingController();
   final _genderOptions = ['Male', 'Female', 'Other'];
   final _statusOptions = ['Single', 'Married', 'Divorced'];
   final _bloodGroupOptions = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -45,37 +47,50 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
 
   // Updated family information structure
   List<FamilyMemberUI> familyMembers = [FamilyMemberUI()];
+  bool _hasPermission =
+      false; // Start with false, assume no permission initially
+  bool _isLoadingPermission = true; // Track if permission check is in progress
+  final StorageService _storageService = StorageService();
 
-  Future<void> _selectDate(
-      BuildContext context, Function(DateTime) onDatePicked) async {
-    final picked = await showDatePicker(
+  Future<void> _selectDate(BuildContext context,
+      Function(DateTime) onDatePicked, bool isFamilyMember) async {
+    final DateTime now = DateTime.now();
+    final DateTime initialDate = DateTime(1950);
+    final DateTime lastDate =
+        DateTime(now.year, now.month, now.day); // Today's date
+
+    DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(1950),
-      lastDate: DateTime(2100),
+      initialDate: now,
+      firstDate: initialDate,
+      lastDate: lastDate,
     );
-    if (picked != null) onDatePicked(picked);
+
+    if (picked != null) {
+      if (picked.isAfter(lastDate)) {
+        // Optionally display an error message if the selected date is in the future
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Date of Birth cannot be today or a future date.')),
+        );
+        return;
+      }
+      onDatePicked(picked);
+    }
   }
 
   void _addFamilyMember() {
     setState(() {
       familyMembers.add(FamilyMemberUI());
     });
-    print(
-        '👥 DEBUG: Added family member. Total count: ${familyMembers.length}');
   }
 
   void _removeFamilyMember(int index) {
     if (familyMembers.length > 1) {
-      print('👥 DEBUG: Removing family member at index $index');
       setState(() {
         familyMembers[index].dispose();
         familyMembers.removeAt(index);
       });
-      print(
-          '👥 DEBUG: Family member removed. Total count: ${familyMembers.length}');
-    } else {
-      print('👥 DEBUG: Cannot remove family member - minimum 1 required');
     }
   }
 
@@ -147,81 +162,100 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
       member.dispose();
     }
     _nameController.dispose();
-    _idController.dispose();
     super.dispose();
   }
 
-  // --- DEBUG PRINTS ON FIELD CHANGES ---
+  Future<void> _checkPermission() async {
+    setState(() {
+      _isLoadingPermission = true; // Start loading
+    });
+    String? authToken;
 
-  void _debugPrintBasicInfo() {
-    print('📝 DEBUG: [LIVE UPDATE] ===== BASIC INFO =====');
-    print('📝 DEBUG: [LIVE] Employee Name: "${_nameController.text}"');
-    print('📝 DEBUG: [LIVE] Gender: $_selectedGender');
-    print('📝 DEBUG: [LIVE] Marital Status: $_selectedStatus');
-    print('📝 DEBUG: [LIVE] DOB: $_dob');
-    print('📝 DEBUG: [LIVE] DOJ: $_doj');
-    print('📝 DEBUG: [LIVE] Blood Group: $_selectedBloodGroup');
-    print('📝 DEBUG: [LIVE] Religion: $_selectedReligion');
-    print('📝 DEBUG: [LIVE] ==============================');
-  }
+    try {
+      final authData = await _storageService.getAllAuthData();
+      authToken = authData['token'];
+    } catch (e) {
+      print('Error getting token from storage: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Error getting token from storage: ${e.toString()}')),
+      );
+      setState(() {
+        _hasPermission = false;
+        _isLoadingPermission = false;
+      });
+      return; // Exit if token retrieval fails
+    }
 
-  void _debugPrintFamilyMember(int index) {
-    final member = familyMembers[index];
-    print('👨‍👩‍👧‍👦 DEBUG: [LIVE UPDATE] Family Member #${index + 1}');
-    print('  Name: "${member.nameController.text}"');
-    print('  Relation: "${member.relationController.text}"');
-    print('  Occupation: "${member.occupationController.text}"');
-    print('  DOB: ${member.dateOfBirth}');
-    print('👨‍👩‍👧‍👦 DEBUG: -------------------------------');
+    if (authToken == null || authToken.isEmpty) {
+      print('Auth token is missing.');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Auth token is missing.')),
+      );
+      setState(() {
+        _hasPermission = false; // No token, no permission
+        _isLoadingPermission = false;
+      });
+      return;
+    }
+
+    final url = Uri.parse('https://erp.comsindia.in/api/employee/store');
+    final headers = {
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $authToken',
+    };
+
+    try {
+      final response = await http.post(url, headers: headers);
+
+      if (response.statusCode == 403 &&
+          jsonDecode(response.body)['message'] ==
+              "You do not have permission to create an employee.") {
+        setState(() {
+          _hasPermission = false;
+          _isLoadingPermission = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content:
+                  Text('You do not have permission to create an employee.')),
+        );
+      } else {
+        setState(() {
+          _hasPermission = true;
+          _isLoadingPermission = false;
+        });
+      }
+    } catch (e) {
+      print('Error checking permission: $e');
+      // Handle network or server errors as needed
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error checking permission: ${e.toString()}')),
+      );
+      setState(() {
+        _hasPermission = false; // Assume no permission on error
+        _isLoadingPermission = false;
+      });
+    }
   }
 
   @override
   void initState() {
     super.initState();
-    print('🚀 DEBUG: ===== BASIC INFO PAGE INITIALIZED =====');
-    print('🚀 DEBUG: Initial family members count: ${familyMembers.length}');
-
+    _checkPermission(); // Check permission when the page loads
     // Pre-populate fields with sample data for easy testing
-    _nameController.text = "Utkarsh";
-    _selectedGender = "Male";
-    _selectedStatus = "Married";
-    _selectedBloodGroup = "A+";
-    _selectedReligion = "Hindu";
-    _dob = DateTime(1990, 1, 1);
-    _doj = DateTime(2025, 6, 10);
-
-    // Pre-populate first family member
-    familyMembers[0].nameController.text = "Jane Doe";
-    familyMembers[0].relationController.text = "Wife";
-    familyMembers[0].occupationController.text = "Teacher";
-    familyMembers[0].dateOfBirth = DateTime(1992, 1, 1);
-
-    _nameController.addListener(_debugPrintBasicInfo);
-    // Add listeners for all family member fields
-    for (var i = 0; i < familyMembers.length; i++) {
-      _addFamilyMemberListeners(i);
-    }
-    print('🚀 DEBUG: Listeners attached for all fields');
-    print('🚀 DEBUG: Sample data pre-populated for easy testing');
-    print('🚀 DEBUG: ===================================');
-  }
-
-  void _addFamilyMemberListeners(int index) {
-    final member = familyMembers[index];
-    member.nameController.addListener(() => _debugPrintFamilyMember(index));
-    member.relationController.addListener(() => _debugPrintFamilyMember(index));
-    member.occupationController
-        .addListener(() => _debugPrintFamilyMember(index));
-    // For dateOfBirth, handled in date picker below
-  }
-
-  @override
-  void didUpdateWidget(covariant AddEmployeePage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Ensure listeners are attached to all family members
-    for (var i = 0; i < familyMembers.length; i++) {
-      _addFamilyMemberListeners(i);
-    }
+    // _nameController.text = "Utkarsh";
+    // _selectedGender = "Male";
+    // _selectedStatus = "Married";
+    // _selectedBloodGroup = "A+";
+    // _selectedReligion = "Hindu";
+    // _dob = DateTime(1990, 1, 1);
+    // _doj = DateTime(2025, 6, 10);
+    // // Pre-populate first family member
+    // familyMembers[0].nameController.text = "Jane Doe";
+    // familyMembers[0].relationController.text = "Wife";
+    // familyMembers[0].occupationController.text = "Teacher";
+    // familyMembers[0].dateOfBirth = DateTime(1992, 1, 1);
   }
 
   @override
@@ -244,304 +278,341 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
         title: const Text('Basic Information',
             style: TextStyle(color: Colors.white, fontSize: 18)),
       ),
-      body: Consumer<EmployeeProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: Builder(
+          // Use a Builder to get a context *within* the build method
+          builder: (BuildContext context) {
+        return Consumer<EmployeeProvider>(
+          builder: (context, provider, child) {
+            if (provider.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          if (provider.isError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Error: ${provider.errorMessage}'),
-                  ElevatedButton(
-                    onPressed: () => provider.clearError(),
-                    child: const Text('Try Again'),
-                  ),
-                ],
-              ),
-            );
-          }
+            if (provider.isError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Error: ${provider.errorMessage}'),
+                    ElevatedButton(
+                      onPressed: () => provider.clearError(),
+                      child: const Text('Try Again'),
+                    ),
+                  ],
+                ),
+              );
+            }
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (currentStep == 0) ...[
-                    rowWrap([
-                      _buildTextField(_nameController, 'Employee Name *'),
-                    ]),
-                    rowWrap([
-                      _buildDropdown(
-                          'Gender *', _genderOptions, _selectedGender, (val) {
-                        setState(() => _selectedGender = val);
-                        _debugPrintBasicInfo();
-                      }),
-                      _buildDropdown(
-                          'Marital Status *', _statusOptions, _selectedStatus,
-                          (val) {
-                        setState(() => _selectedStatus = val);
-                        _debugPrintBasicInfo();
-                      }),
-                    ]),
-                    rowWrap([
-                      _buildDatePicker('Date of Birth *', _dob, (date) {
-                        setState(() => _dob = date);
-                        _debugPrintBasicInfo();
-                      }),
-                      _buildDatePicker('Date of Joining *', _doj, (date) {
-                        setState(() => _doj = date);
-                        _debugPrintBasicInfo();
-                      }),
-                    ]),
-                    rowWrap([
-                      _buildDropdown('Blood Group', _bloodGroupOptions,
-                          _selectedBloodGroup, (val) {
-                        setState(() => _selectedBloodGroup = val);
-                        _debugPrintBasicInfo();
-                      }),
-                      _buildDropdown(
-                          'Religion *', _religionOptions, _selectedReligion,
-                          (val) {
-                        setState(() => _selectedReligion = val);
-                        _debugPrintBasicInfo();
-                      }),
-                    ]),
-                    const SizedBox(height: 20),
-                    // Action button moved to bottomNavigationBar
-                  ] else if (currentStep == 1) ...[
-                    // Updated Family Information Section
-                    sectionTitle('Family Information'),
-                    const SizedBox(height: 16),
+            if (_isLoadingPermission) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              ); // Show loading indicator while checking permission
+            }
 
-                    // Dynamic Family Members List
-                    ...familyMembers.asMap().entries.map((entry) {
-                      int index = entry.key;
-                      FamilyMemberUI member = entry.value;
+            return _hasPermission
+                ? SingleChildScrollView(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (currentStep == 0) ...[
+                            rowWrap([
+                              _buildTextField(
+                                  _nameController, 'Employee Name *'),
+                            ]),
+                            rowWrap([
+                              _buildDropdown(
+                                  'Gender *', _genderOptions, _selectedGender,
+                                  (val) {
+                                setState(() => _selectedGender = val);
+                              }),
+                              _buildDropdown('Marital Status *', _statusOptions,
+                                  _selectedStatus, (val) {
+                                setState(() => _selectedStatus = val);
+                              }),
+                            ]),
+                            rowWrap([
+                              _buildDatePicker('Date of Birth *', _dob, (date) {
+                                setState(() => _dob = date);
+                              }),
+                              _buildDatePicker('Date of Joining *', _doj,
+                                  (date) {
+                                setState(() => _doj = date);
+                              }),
+                            ]),
+                            rowWrap([
+                              _buildDropdown('Blood Group', _bloodGroupOptions,
+                                  _selectedBloodGroup, (val) {
+                                setState(() => _selectedBloodGroup = val);
+                              }),
+                              _buildDropdown('Religion *', _religionOptions,
+                                  _selectedReligion, (val) {
+                                setState(() => _selectedReligion = val);
+                              }),
+                            ]),
+                            const SizedBox(height: 20),
+                            // Action button moved to bottomNavigationBar
+                          ] else if (currentStep == 1) ...[
+                            // Updated Family Information Section
+                            sectionTitle('Family Information'),
+                            const SizedBox(height: 16),
 
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 20),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(12),
-                          color: Colors.grey.shade50,
-                        ),
-                        child: Column(
-                          children: [
-                            // First Row: Name and Relation
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildLabelWithAsterisk('Name *'),
-                                const SizedBox(height: 4),
-                                TextFormField(
-                                  controller: member.nameController,
-                                  decoration: InputDecoration(
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: BorderSide(
-                                          color: Colors.grey.shade300),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: BorderSide(
-                                          color: Colors.grey.shade300),
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 8),
-                                  ),
-                                  validator:
-                                      ValidationUtils.validateFamilyMemberName,
-                                  onChanged: (_) =>
-                                      _debugPrintFamilyMember(index),
+                            // Dynamic Family Members List
+                            ...familyMembers.asMap().entries.map((entry) {
+                              int index = entry.key;
+                              FamilyMemberUI member = entry.value;
+
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 20),
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  border:
+                                      Border.all(color: Colors.grey.shade300),
+                                  borderRadius: BorderRadius.circular(12),
+                                  color: Colors.grey.shade50,
                                 ),
-                              ],
-                            ),
-                            const SizedBox(width: 16),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Relation',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.w500)),
-                                const SizedBox(height: 4),
-                                TextFormField(
-                                  controller: member.relationController,
-                                  decoration: InputDecoration(
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: BorderSide(
-                                          color: Colors.grey.shade300),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: BorderSide(
-                                          color: Colors.grey.shade300),
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 8),
-                                  ),
-                                  onChanged: (_) =>
-                                      _debugPrintFamilyMember(index),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-
-                            // Second Row: Occupation and Date of Birth
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Occupation',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.w500)),
-                                const SizedBox(height: 4),
-                                TextFormField(
-                                  controller: member.occupationController,
-                                  decoration: InputDecoration(
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: BorderSide(
-                                          color: Colors.grey.shade300),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      borderSide: BorderSide(
-                                          color: Colors.grey.shade300),
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 8),
-                                  ),
-                                  onChanged: (_) =>
-                                      _debugPrintFamilyMember(index),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(width: 16),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Date of Birth',
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.w500)),
-                                const SizedBox(height: 4),
-                                InkWell(
-                                  onTap: () => _selectDate(context, (date) {
-                                    setState(() => member.dateOfBirth = date);
-                                    _debugPrintFamilyMember(index);
-                                  }),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      border: Border.all(
-                                          color: Colors.grey.shade300),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
+                                child: Column(
+                                  children: [
+                                    // First Row: Name and Relation
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          member.dateOfBirth != null
-                                              ? '${member.dateOfBirth!.day.toString().padLeft(2, '0')}-${member.dateOfBirth!.month.toString().padLeft(2, '0')}-${member.dateOfBirth!.year}'
-                                              : 'dd-mm-yyyy',
-                                          style: TextStyle(
-                                            color: member.dateOfBirth != null
-                                                ? Colors.black
-                                                : Colors.grey.shade600,
+                                        _buildLabelWithAsterisk('Name *'),
+                                        const SizedBox(height: 4),
+                                        TextFormField(
+                                          controller: member.nameController,
+                                          decoration: InputDecoration(
+                                            filled: true,
+                                            fillColor: Colors.white,
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              borderSide: BorderSide(
+                                                  color: Colors.grey.shade300),
+                                            ),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              borderSide: BorderSide(
+                                                  color: Colors.grey.shade300),
+                                            ),
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 8),
                                           ),
+                                          validator: ValidationUtils
+                                              .validateFamilyMemberName,
                                         ),
-                                        Icon(Icons.calendar_today,
-                                            size: 16,
-                                            color: Colors.grey.shade600),
                                       ],
                                     ),
+                                    const SizedBox(width: 16),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text('Relation',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w500)),
+                                        const SizedBox(height: 4),
+                                        TextFormField(
+                                          controller: member.relationController,
+                                          decoration: InputDecoration(
+                                            filled: true,
+                                            fillColor: Colors.white,
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              borderSide: BorderSide(
+                                                  color: Colors.grey.shade300),
+                                            ),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              borderSide: BorderSide(
+                                                  color: Colors.grey.shade300),
+                                            ),
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 8),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+
+                                    // Second Row: Occupation and Date of Birth
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text('Occupation',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w500)),
+                                        const SizedBox(height: 4),
+                                        TextFormField(
+                                          controller:
+                                              member.occupationController,
+                                          decoration: InputDecoration(
+                                            filled: true,
+                                            fillColor: Colors.white,
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              borderSide: BorderSide(
+                                                  color: Colors.grey.shade300),
+                                            ),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              borderSide: BorderSide(
+                                                  color: Colors.grey.shade300),
+                                            ),
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 8),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text('Date of Birth',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w500)),
+                                        const SizedBox(height: 4),
+                                        InkWell(
+                                          onTap: () =>
+                                              _selectDate(context, (date) {
+                                            setState(() =>
+                                                member.dateOfBirth = date);
+                                          }, true),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 12, vertical: 12),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              border: Border.all(
+                                                  color: Colors.grey.shade300),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  member.dateOfBirth != null
+                                                      ? '${member.dateOfBirth!.day.toString().padLeft(2, '0')}-${member.dateOfBirth!.month.toString().padLeft(2, '0')}-${member.dateOfBirth!.year}'
+                                                      : 'dd-mm-yyyy',
+                                                  style: TextStyle(
+                                                    color: member.dateOfBirth !=
+                                                            null
+                                                        ? Colors.black
+                                                        : Colors.grey.shade600,
+                                                  ),
+                                                ),
+                                                Icon(Icons.calendar_today,
+                                                    size: 16,
+                                                    color:
+                                                        Colors.grey.shade600),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    // Remove button (show only if more than one member)
+                                    if (familyMembers.length > 1) ...[
+                                      const SizedBox(height: 12),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        children: [
+                                          ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.red,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 16,
+                                                      vertical: 8),
+                                              shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8)),
+                                            ),
+                                            onPressed: () =>
+                                                _removeFamilyMember(index),
+                                            child: const Text('Remove',
+                                                style: TextStyle(
+                                                    color: Colors.white)),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+
+                            // Add More button positioned after all family members
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blue,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20, vertical: 10),
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8)),
+                                  ),
+                                  onPressed: () {
+                                    _addFamilyMember();
+                                  },
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.add,
+                                          color: Colors.white, size: 20),
+                                      SizedBox(width: 8),
+                                      Text('Add More Family Member',
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16)),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
-
-                            // Remove button (show only if more than one member)
-                            if (familyMembers.length > 1) ...[
-                              const SizedBox(height: 12),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 16, vertical: 8),
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8)),
-                                    ),
-                                    onPressed: () => _removeFamilyMember(index),
-                                    child: const Text('Remove',
-                                        style: TextStyle(color: Colors.white)),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ],
-                        ),
-                      );
-                    }).toList(),
-
-                    // Add More button positioned after all family members
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
+                            const SizedBox(height: 140),
+                            // Action button moved to bottomNavigationBar
+                          ]
+                        ],
+                      ),
+                    ),
+                  )
+                : Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 10),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8)),
-                          ),
-                          onPressed: () {
-                            _addFamilyMember();
-                            // Attach listeners for the new member
-                            _addFamilyMemberListeners(familyMembers.length - 1);
-                          },
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.add, color: Colors.white, size: 20),
-                              SizedBox(width: 8),
-                              Text('Add More Family Member',
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 16)),
-                            ],
-                          ),
-                        ),
+                        const Text(
+                            "You do not have permission to create an employee."),
                       ],
                     ),
-                    const SizedBox(height: 140),
-                    // Action button moved to bottomNavigationBar
-                  ]
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+                  );
+          },
+        );
+      }),
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
@@ -553,18 +624,13 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
         controller: controller,
         decoration: _getInputDecorationWithRedAsterisk(label),
         validator: (value) {
-          if (label == 'Employee Name *') {
+          if (label == 'Employee Name ') {
             return ValidationUtils.validateEmployeeName(value);
           }
-          if (label.contains('*') && (value == null || value.isEmpty)) {
+          if (label.contains('') && (value == null || value.isEmpty)) {
             return 'This field is required';
           }
           return null;
-        },
-        onChanged: (_) {
-          if (label == 'Employee Name *') {
-            _debugPrintBasicInfo();
-          }
         },
       ),
     );
@@ -646,10 +712,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
       child: InkWell(
         onTap: () => _selectDate(context, (date) {
           onDatePicked(date);
-          if (label == 'Date of Birth *' || label == 'Date of Joining *') {
-            _debugPrintBasicInfo();
-          }
-        }),
+        }, false),
         child: InputDecorator(
           decoration: InputDecoration(
             label: _buildLabelWithAsterisk(label),
@@ -690,7 +753,10 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
   Widget _buildBottomNavigationBar() {
     // Hide the bottom bar when the provider is busy or in error state
     final provider = context.read<EmployeeProvider>();
-    if (provider.isLoading || provider.isError) {
+    if (provider.isLoading ||
+        provider.isError ||
+        _isLoadingPermission ||
+        !_hasPermission) {
       return const SizedBox.shrink();
     }
     final String buttonText = currentStep == 0
@@ -712,14 +778,8 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
             onPressed: () {
               if (currentStep == 0) {
                 // Validate and move to the next step
-                print(
-                    '🎯 DEBUG: "Next" button (bottom bar) clicked - validating form...');
                 if (_formKey.currentState!.validate()) {
-                  print('✅ DEBUG: Form validation passed!');
                   setState(() => currentStep = 1);
-                } else {
-                  print(
-                      '❌ DEBUG: Form validation failed! Please check required fields');
                 }
               } else {
                 // Submit the form on the final step

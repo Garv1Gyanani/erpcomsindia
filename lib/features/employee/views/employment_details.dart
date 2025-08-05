@@ -22,11 +22,11 @@ class _EmploymentDetailsScreenState extends State<EmploymentDetailsScreen> {
   void initState() {
     super.initState();
     // Pre-populate with sample data for testing
-    previousEmployments[0].companyNameController.text = "ABC Pvt Ltd";
-    previousEmployments[0].designationController.text = "Software Engineer";
+    previousEmployments[0].companyNameController.text = "";
+    previousEmployments[0].designationController.text = "";
     previousEmployments[0].fromDate = DateTime(2020, 1, 1);
     previousEmployments[0].toDate = DateTime(2022, 1, 1);
-    previousEmployments[0].reasonController.text = "Better Opportunity";
+    previousEmployments[0].reasonController.text = "";
 
     print('🚀 DEBUG: Previous Employment Details - Sample data pre-populated');
   }
@@ -65,7 +65,7 @@ class _EmploymentDetailsScreenState extends State<EmploymentDetailsScreen> {
     if (picked != null) onDateSelected(picked);
   }
 
-  Future<void> _submitForm() async {
+Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       try {
         final provider = context.read<EmployeeProvider>();
@@ -88,7 +88,7 @@ class _EmploymentDetailsScreenState extends State<EmploymentDetailsScreen> {
         };
 
         print('🐛 DEBUG: Previous Employment Data: $employmentDetailsData');
-        provider.updateFormData('employment_details', employmentDetailsData);
+        provider.updateFormData('previous_employment_details', employmentDetailsData); // CHANGED KEY HERE
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -107,7 +107,6 @@ class _EmploymentDetailsScreenState extends State<EmploymentDetailsScreen> {
       }
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

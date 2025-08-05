@@ -11,6 +11,7 @@ enum EmployeeStatus {
   loading,
   success,
   error,
+  idle,
 }
 
 class EmployeeProvider extends ChangeNotifier {
@@ -31,8 +32,9 @@ class EmployeeProvider extends ChangeNotifier {
   EmployeeStatus get status => _status;
   String? get errorMessage => _errorMessage;
   EmployeeResponseModel? get response => _response;
-  Map<String, dynamic> get allFormData => Map.from(_allFormData);
-  List<String> get debugLogs => List.from(_debugLogs);
+  Map<String, dynamic> get allFormData =>
+      Map.from(_allFormData); // Defensive copy
+  List<String> get debugLogs => List.from(_debugLogs); // Defensive copy
   bool get debugMode => _debugMode;
   Map<String, dynamic> get apiCallHistory => Map.from(_apiCallHistory);
   int get apiCallCount => _apiCallCount;
@@ -53,6 +55,29 @@ class EmployeeProvider extends ChangeNotifier {
       _debugLogs.add('[$timestamp] $message');
       print('🐛 DEBUG: $message');
     }
+  }
+
+  List<Map<String, dynamic>> _parseNestedList(dynamic source) {
+    if (source == null) {
+      return [];
+    }
+
+    try {
+      if (source is String && source.isNotEmpty) {
+        final decoded = json.decode(source);
+        if (decoded is List) {
+          return List<Map<String, dynamic>>.from(
+              decoded.whereType<Map<String, dynamic>>());
+        }
+      } else if (source is List) {
+        return List<Map<String, dynamic>>.from(
+            source.whereType<Map<String, dynamic>>());
+      }
+    } catch (e) {
+      print("Error parsing nested JSON data: $e. Source was: $source");
+    }
+
+    return [];
   }
 
   void clearDebugLogs() {
@@ -94,6 +119,9 @@ class EmployeeProvider extends ChangeNotifier {
           '🐛 DEBUG: Call provider.createEmployeeFromCollectedData() to submit');
 
       final apiData = getFormattedDataForAPI();
+      print(
+          '🚀 DEBUG: Formatted data before FormData: $apiData'); // ADD THIS LINE
+
       print('🐛 DEBUG: API Data Summary: ${apiData.keys.length} fields ready');
       print('🐛 DEBUG: API Fields: ${apiData.keys.join(', ')}');
     } else {
@@ -111,8 +139,12 @@ class EmployeeProvider extends ChangeNotifier {
     print('📝 DEBUG: Screen: $screenName');
     print('📝 DEBUG: Data fields: ${data.keys.join(', ')}');
 
-    _allFormData[screenName] = data;
-    final timestamp = DateTime.now().toString();
+    // MERGE data instead of replacing
+    if (_allFormData.containsKey(screenName)) {
+      _allFormData[screenName]!.addAll(data); // Merge existing data
+    } else {
+      _allFormData[screenName] = data; // Create new entry if it doesn't exist
+    }
 
     data.forEach((key, value) {
       if (value is List) {
@@ -196,15 +228,18 @@ class EmployeeProvider extends ChangeNotifier {
     }
 
     if (_allFormData.containsKey('employment_details')) {
+      print(
+          '🔄 DEBUG: employment_details block is being executed!'); // ADD THIS LINE
+
       final empDetails =
           _allFormData['employment_details'] as Map<String, dynamic>;
       formattedData.addAll({
-        'department_id': empDetails['department_id']?.toString() ?? '3',
-        'designation_id': empDetails['designation_id']?.toString() ?? '3',
-        'site_id': empDetails['site_id']?.toString() ?? '1',
-        'location': empDetails['location']?.toString() ?? '1',
-        'joining_mode': empDetails['joining_mode']?.toString() ?? 'interview',
-        'punching_code': empDetails['punching_code']?.toString() ?? '1234',
+        'department_id': empDetails['department_id']?.toString() ?? '',
+        'designation_id': empDetails['designation_id']?.toString() ?? '',
+        'site_id': empDetails['site_id']?.toString() ?? '',
+        'location': empDetails['location']?.toString() ?? '',
+        'joining_mode': empDetails['joining_mode']?.toString() ?? '',
+        'punching_code': empDetails['punching_code']?.toString() ?? '',
       });
     } else {
       formattedData.addAll({
@@ -217,47 +252,92 @@ class EmployeeProvider extends ChangeNotifier {
       });
     }
 
-    if (_allFormData.containsKey('contact_details')) {
+    if (_allFormData.containsKey('contact_details') &&
+        _allFormData['contact_details'] != null) {
       final contactDetails =
           _allFormData['contact_details'] as Map<String, dynamic>;
+
       formattedData.addAll({
         'emergency_contact':
-            contactDetails['emergency_contact'] ?? '9876543210',
+            contactDetails['emergency_contact']?.toString() ?? '9876543210',
         'contactPersionName':
-            contactDetails['contact_person_name'] ?? 'Mike Doe',
+            contactDetails['contact_person_name']?.toString() ?? 'Mike Doe',
         'emergency_contact_relation':
-            contactDetails['emergency_contact_relation'] ?? 'Brother',
-        'email': contactDetails['email'] ?? 'user3@example.com',
-        'phone': contactDetails['phone'] ?? '1131111111',
+            contactDetails['emergency_contact_relation']?.toString() ??
+                'Brother',
+        'email': contactDetails['email']?.toString() ?? '',
+        'phone': contactDetails['phone']?.toString() ?? '1131111111',
       });
 
-      final presentAddress = contactDetails['present_address'] as List? ?? [];
-      formattedData['present_address[0]'] =
-          presentAddress.isNotEmpty ? presentAddress[0] : '123 Main St';
-      formattedData['present_address[1]'] =
-          presentAddress.length > 1 ? presentAddress[1] : 'Apt 4B';
+      // Access the first element in the list
+      final List<dynamic>? presentAddressList =
+          contactDetails['present_address'] as List?;
+      if (presentAddressList != null && presentAddressList.isNotEmpty) {
+        final Map<String, dynamic> addressObject =
+            presentAddressList[0] as Map<String, dynamic>;
 
-      final permanentAddress =
-          contactDetails['permanent_address'] as List? ?? [];
-      formattedData['permanent_address[0]'] = permanentAddress.isNotEmpty
-          ? permanentAddress[0]
-          : '456 Secondary Rd';
-      formattedData['permanent_address[1]'] =
-          permanentAddress.length > 1 ? permanentAddress[1] : 'Floor 2';
+        formattedData['present_address[0][street]'] =
+            addressObject['street']?.toString() ?? '';
+        formattedData['present_address[0][city]'] =
+            addressObject['city']?.toString() ?? '';
+        formattedData['present_address[0][district]'] =
+            addressObject['district']?.toString() ?? '';
+        formattedData['present_address[0][post_office]'] =
+            addressObject['post_office']?.toString() ?? '';
+        formattedData['present_address[0][thana]'] =
+            addressObject['thana']?.toString() ?? '';
+        formattedData['present_address[0][pincode]'] =
+            addressObject['pincode']?.toString() ?? '';
+      } else {
+        formattedData['present_address[0][street]'] = '';
+        formattedData['present_address[0][city]'] = '';
+        formattedData['present_address[0][pincode]'] = '';
+      }
+
+      // Access the first element in the list
+      final List<dynamic>? permanentAddressList =
+          contactDetails['permanent_address'] as List?;
+      if (permanentAddressList != null && permanentAddressList.isNotEmpty) {
+        final Map<String, dynamic> addressObject =
+            permanentAddressList[0] as Map<String, dynamic>;
+        formattedData['permanent_address[0][street]'] =
+            addressObject['street']?.toString() ?? '';
+        formattedData['permanent_address[0][city]'] =
+            addressObject['city']?.toString() ?? '';
+        formattedData['permanent_address[0][district]'] =
+            addressObject['district']?.toString() ?? '';
+        formattedData['permanent_address[0][post_office]'] =
+            addressObject['post_office']?.toString() ?? '';
+        formattedData['permanent_address[0][thana]'] =
+            addressObject['thana']?.toString() ?? '';
+        formattedData['permanent_address[0][pincode]'] =
+            addressObject['pincode']?.toString() ?? '';
+      } else {
+        formattedData['permanent_address[0][street]'] = '456 Secondary Rd';
+        formattedData['permanent_address[0][city]'] = 'Default City 2';
+        formattedData['permanent_address[0][pincode]'] = '654321';
+      }
     } else {
       formattedData.addAll({
         'emergency_contact': '9876543210',
         'contactPersionName': 'Mike Doe',
         'emergency_contact_relation': 'Brother',
-        'email': 'user3@example.com',
-        'phone': '1131111111',
-        'present_address[0]': '123 Main St',
-        'present_address[1]': 'Apt 4B',
-        'permanent_address[0]': '456 Secondary Rd',
-        'permanent_address[1]': 'Floor 2',
+        'email': 'user@example.com',
+        'phone': '1112223333',
+        'present_address[0][street]': '123 Main St',
+        'present_address[0][city]': 'Default City',
+        'present_address[0][district]': 'Default District',
+        'present_address[0][post_office]': 'Default PO',
+        'present_address[0][thana]': 'Default Thana',
+        'present_address[0][pincode]': '123456',
+        'permanent_address[0][street]': '456 Secondary Rd',
+        'permanent_address[0][city]': 'Default City 2',
+        'permanent_address[0][district]': 'Default District 2',
+        'permanent_address[0][post_office]': 'Default PO 2',
+        'permanent_address[0][thana]': 'Default Thana 2',
+        'permanent_address[0][pincode]': '654321',
       });
     }
-
     if (_allFormData.containsKey('education_details')) {
       final educationDetails =
           _allFormData['education_details'] as Map<String, dynamic>;
@@ -278,18 +358,18 @@ class EmployeeProvider extends ChangeNotifier {
       }
     } else {
       formattedData.addAll({
-        'education[0][degree]': 'B.Tech',
-        'education[0][university]': 'XYZ University',
-        'education[0][specialization]': 'Computer Science',
-        'education[0][from_year]': '2010',
-        'education[0][to_year]': '2014',
-        'education[0][percentage]': '78.5',
-        'education[1][degree]': 'MCA',
-        'education[1][university]': 'XYZ University',
-        'education[1][specialization]': 'Computer Science',
-        'education[1][from_year]': '2014',
-        'education[1][to_year]': '2016',
-        'education[1][percentage]': '78.5',
+        'education[0][degree]': '',
+        'education[0][university]': '',
+        'education[0][specialization]': '',
+        'education[0][from_year]': '',
+        'education[0][to_year]': '',
+        'education[0][percentage]': '',
+        'education[1][degree]': '',
+        'education[1][university]': '',
+        'education[1][specialization]': '',
+        'education[1][from_year]': '',
+        'education[1][to_year]': '',
+        'education[1][percentage]': '',
       });
     }
 
@@ -297,21 +377,21 @@ class EmployeeProvider extends ChangeNotifier {
       final govtDetails =
           _allFormData['govt_bank_details'] as Map<String, dynamic>;
       formattedData.addAll({
-        'aadhar': govtDetails['aadhar'] ?? '123456789012',
-        'pan': govtDetails['pan'] ?? 'ABCDE1234F',
-        'bank_name': govtDetails['bank_name'] ?? 'HDFC Bank',
-        'bank_account': govtDetails['bank_account'] ?? '1234567890',
-        'ifsc_code': govtDetails['ifsc_code'] ?? 'HDFC0001234',
-        'remarks': govtDetails['remarks'] ?? 'This is a sample remark.',
+        'aadhar': govtDetails['aadhar'] ?? '',
+        'pan': govtDetails['pan'] ?? '',
+        'bank_name': govtDetails['bank_name'] ?? '',
+        'bank_account': govtDetails['bank_account'] ?? '',
+        'ifsc_code': govtDetails['ifsc_code'] ?? '',
+        'remarks': govtDetails['remarks'] ?? '',
       });
     } else {
       formattedData.addAll({
-        'aadhar': '123456789012',
-        'pan': 'ABCDE1234F',
-        'bank_name': 'HDFC Bank',
-        'bank_account': '1234567890',
-        'ifsc_code': 'HDFC0001234',
-        'remarks': 'This is a sample remark.',
+        'aadhar': '',
+        'pan': '',
+        'bank_name': '',
+        'bank_account': '',
+        'ifsc_code': '',
+        'remarks': '',
       });
     }
 
@@ -319,13 +399,13 @@ class EmployeeProvider extends ChangeNotifier {
       final epfDetails =
           _allFormData['epf_declaration'] as Map<String, dynamic>;
       formattedData.addAll({
-        'pf_member': epfDetails['pf_member']?.toString().toLowerCase() ?? 'yes',
+        'pf_member': epfDetails['pf_member']?.toString().toLowerCase() ?? '',
         'pension_member':
-            epfDetails['pension_member']?.toString().toLowerCase() ?? 'yes',
-        'uan_number': epfDetails['uan_number'] ?? 'UAN12345678',
-        'previous_pf_number': epfDetails['previous_pf_number'] ?? 'PF987654321',
+            epfDetails['pension_member']?.toString().toLowerCase() ?? '',
+        'uan_number': epfDetails['uan_number'] ?? '',
+        'previous_pf_number': epfDetails['previous_pf_number'] ?? '',
         'exit_date': epfDetails['exit_date'] ?? '2023-12-31',
-        'scheme_certificate': epfDetails['scheme_certificate'] ?? 'SC12345',
+        'scheme_certificate': epfDetails['scheme_certificate'] ?? '',
         'ppo': epfDetails['ppo'] ?? 'PPO67890',
         'international_worker':
             epfDetails['international_worker']?.toString().toLowerCase() ??
@@ -356,7 +436,7 @@ class EmployeeProvider extends ChangeNotifier {
       formattedData.addAll({
         'pf_member': 'yes',
         'pension_member': 'yes',
-        'uan_number': 'UAN12345678',
+        'uan_number': '',
         'previous_pf_number': 'PF987654321',
         'exit_date': '2023-12-31',
         'scheme_certificate': 'SC12345',
@@ -532,13 +612,15 @@ class EmployeeProvider extends ChangeNotifier {
       _errorMessage = null;
 
       final formattedData = getFormattedDataForAPI();
+      print('🚀 DEBUG: API Endpoint: $formattedData');
+
       print('🚀 DEBUG: Formatted ${formattedData.keys.length} fields for API');
       print('🚀 DEBUG: API Endpoint: /employee/store');
 
       FormData formData = FormData();
 
       formattedData.forEach((key, value) {
-        if (value is String && value.isNotEmpty) {
+        if (value is String) {
           formData.fields.add(MapEntry(key, value));
           print('🔥 DEBUG: Added field: $key = "$value"');
         }
@@ -566,6 +648,13 @@ class EmployeeProvider extends ChangeNotifier {
       print('📡 DEBUG: Making API call...');
       // Make API call using API service with proper auth token
       final response = await _apiService.createEmployee(formData);
+      _apiCallCount++;
+      _apiCallHistory[DateTime.now().toString()] = {
+        'endpoint': '/employee/store',
+        'request': formData.fields.map((e) => '${e.key}: ${e.value}').toList(),
+        'status_code': response.statusCode,
+        'response_data': response.data
+      };
 
       print('🎉 DEBUG: API response received: Status ${response.statusCode}');
       print('🎉 DEBUG: Response data: ${response.data}');
@@ -597,7 +686,25 @@ class EmployeeProvider extends ChangeNotifier {
       if (e.response != null) {
         print('❌ DEBUG: Response status: ${e.response?.statusCode}');
         print('❌ DEBUG: Response data: ${e.response?.data}');
-        _setError('API Error: ${e.response?.data['message'] ?? e.message}');
+
+        if (e.response?.statusCode == 422) {
+          // Handle validation errors
+          final errors = e.response?.data['errors'] as Map<String, dynamic>?;
+          if (errors != null) {
+            String errorMessage = 'Validation failed:\n';
+            errors.forEach((field, messages) {
+              errorMessage +=
+                  '$field: ${messages.join(', ')}\n'; // Join multiple messages for a field
+            });
+            _setError(errorMessage); // Set the formatted error message
+          } else {
+            _setError(
+                'API Error: ${e.response?.data['message'] ?? e.message}'); //General API error
+          }
+        } else {
+          _setError(
+              'API Error: ${e.response?.data['message'] ?? e.message}'); // General API error
+        }
       } else {
         print('❌ DEBUG: Network Error: ${e.message}');
         _setError('Network Error: ${e.message}');
@@ -605,11 +712,12 @@ class EmployeeProvider extends ChangeNotifier {
     } catch (e) {
       print('❌ DEBUG: Unexpected Exception: $e');
       _setError('Unexpected Error: $e');
+    } finally {
+      _setStatus(EmployeeStatus.idle); // or EmployeeStatus.error
     }
   }
 
   void _addFileFields(FormData formData) {
-    // Add file fields from collected data
     print('📁 DEBUG: Checking for file fields in collected data...');
     int fileCount = 0;
     _allFormData.forEach((screenName, screenData) {
@@ -627,7 +735,6 @@ class EmployeeProvider extends ChangeNotifier {
       }
     });
 
-    // Check for witness signature files specifically
     if (_allFormData.containsKey('nomination_form')) {
       final nominationData =
           _allFormData['nomination_form'] as Map<String, dynamic>;
@@ -656,7 +763,6 @@ class EmployeeProvider extends ChangeNotifier {
     print('📁 DEBUG: Total files added: $fileCount');
   }
 
-  // Legacy method for backward compatibility
   Future<void> createEmployee(EmployeeRequestModel employee) async {
     try {
       _setStatus(EmployeeStatus.loading);
@@ -664,10 +770,12 @@ class EmployeeProvider extends ChangeNotifier {
 
       _addDebugLog('Creating employee using legacy method');
 
-      // Create FormData for multipart request
+      // Helper to convert null or empty string to ''
+      String emptyIfNull(String? value) =>
+          value?.isNotEmpty == true ? value! : '';
+
       FormData formData = FormData();
 
-      // Add basic employee data
       formData.fields.addAll([
         MapEntry('emp_name', employee.empName),
         MapEntry('gender', employee.gender),
@@ -686,34 +794,36 @@ class EmployeeProvider extends ChangeNotifier {
         MapEntry('contact_person_name', employee.contactPersonName),
         MapEntry(
             'emergency_contact_relation', employee.emergencyContactRelation),
-        MapEntry('email', employee.email),
-        MapEntry('phone', employee.phone),
-        MapEntry('aadhar', employee.aadhar),
-        MapEntry('pan', employee.pan),
-        MapEntry('bank_name', employee.bankName),
-        MapEntry('bank_account', employee.bankAccount),
-        MapEntry('ifsc_code', employee.ifscCode),
-        MapEntry('remarks', employee.remarks),
-        MapEntry('witness1_name', employee.witness1Name),
-        MapEntry('witness2_name', employee.witness2Name),
-        MapEntry('insurance_no', employee.insuranceNo),
-        MapEntry('branch_office', employee.branchOffice),
-        MapEntry('dispensary', employee.dispensary),
-        MapEntry('pf_member', employee.pfMember),
-        MapEntry('pension_member', employee.pensionMember),
-        MapEntry('uan_number', employee.uanNumber),
-        MapEntry('previous_pf_number', employee.previousPfNumber),
-        MapEntry('exit_date', employee.exitDate),
-        MapEntry('scheme_certificate', employee.schemeCertificate),
-        MapEntry('ppo', employee.ppo),
-        MapEntry('international_worker', employee.internationalWorker),
-        MapEntry('country_origin', employee.countryOrigin),
-        MapEntry('passport_number', employee.passportNumber),
-        MapEntry('passport_valid_from', employee.passportValidFrom),
-        MapEntry('passport_valid_to', employee.passportValidTo),
+        MapEntry('email', emptyIfNull(employee.email)),
+        MapEntry('phone', emptyIfNull(employee.phone)),
+        MapEntry('aadhar', emptyIfNull(employee.aadhar)),
+        MapEntry('pan', emptyIfNull(employee.pan)),
+        MapEntry('bank_name', emptyIfNull(employee.bankName)),
+        MapEntry('bank_account', emptyIfNull(employee.bankAccount)),
+        MapEntry('ifsc_code', emptyIfNull(employee.ifscCode)),
+        MapEntry('remarks', emptyIfNull(employee.remarks)),
+        MapEntry('witness1_name', emptyIfNull(employee.witness1Name)),
+        MapEntry('witness2_name', emptyIfNull(employee.witness2Name)),
+        MapEntry('insurance_no', emptyIfNull(employee.insuranceNo)),
+        MapEntry('branch_office', emptyIfNull(employee.branchOffice)),
+        MapEntry('dispensary', emptyIfNull(employee.dispensary)),
+        MapEntry('pf_member', emptyIfNull(employee.pfMember)),
+        MapEntry('pension_member', emptyIfNull(employee.pensionMember)),
+        MapEntry('uan_number', emptyIfNull(employee.uanNumber)),
+        MapEntry('previous_pf_number', emptyIfNull(employee.previousPfNumber)),
+        MapEntry('exit_date', emptyIfNull(employee.exitDate)),
+        MapEntry('scheme_certificate', emptyIfNull(employee.schemeCertificate)),
+        MapEntry('ppo', emptyIfNull(employee.ppo)),
+        MapEntry(
+            'international_worker', emptyIfNull(employee.internationalWorker)),
+        MapEntry('country_origin', emptyIfNull(employee.countryOrigin)),
+        MapEntry('passport_number', emptyIfNull(employee.passportNumber)),
+        MapEntry(
+            'passport_valid_from', emptyIfNull(employee.passportValidFrom)),
+        MapEntry('passport_valid_to', emptyIfNull(employee.passportValidTo)),
       ]);
 
-      // Add array fields as JSON strings
+      // Encode complex nested fields
       formData.fields.addAll([
         MapEntry('present_address', jsonEncode(employee.presentAddress)),
         MapEntry('permanent_address', jsonEncode(employee.permanentAddress)),
@@ -729,7 +839,7 @@ class EmployeeProvider extends ChangeNotifier {
             jsonEncode(employee.family.map((e) => e.toJson()).toList())),
       ]);
 
-      // Add file fields
+      // Attach files if they exist
       if (employee.aadharFront != null) {
         formData.files.add(MapEntry(
           'aadhar_front',
@@ -786,7 +896,6 @@ class EmployeeProvider extends ChangeNotifier {
         ));
       }
 
-      // Make API call
       final response = await _apiService.dio.post(
         '/employee',
         data: formData,
@@ -796,6 +905,14 @@ class EmployeeProvider extends ChangeNotifier {
           },
         ),
       );
+
+      _apiCallCount++;
+      _apiCallHistory[DateTime.now().toString()] = {
+        'endpoint': '/employee',
+        'request': formData.fields.map((e) => '${e.key}: ${e.value}').toList(),
+        'status_code': response.statusCode,
+        'response_data': response.data
+      };
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final employeeResponse = EmployeeResponseModel.fromJson(response.data);
@@ -811,6 +928,8 @@ class EmployeeProvider extends ChangeNotifier {
       }
     } catch (e) {
       _setError('Unexpected Error: $e');
+    } finally {
+      _setStatus(EmployeeStatus.idle);
     }
   }
 

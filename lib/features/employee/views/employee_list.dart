@@ -117,6 +117,12 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.red,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            context.goNamed('team');
+          },
+        ),
         title: const Text('Sites',
             style: TextStyle(color: Colors.white, fontSize: 18)),
         actions: [
@@ -427,4 +433,3 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
     }
   }
 }
-          

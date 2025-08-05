@@ -20,12 +20,12 @@ class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
       _addEducationEntry();
       // Pre-populate first education entry with sample data
       final firstEntry = _educationEntries.first;
-      firstEntry.degreeController.text = "B.Tech";
-      firstEntry.universityController.text = "XYZ University";
-      firstEntry.specializationController.text = "Computer Science";
-      firstEntry.fromYearController.text = "2010";
-      firstEntry.toYearController.text = "2014";
-      firstEntry.percentageController.text = "78.5";
+      firstEntry.degreeController.text = "";
+      firstEntry.universityController.text = "";
+      firstEntry.specializationController.text = "";
+      firstEntry.fromYearController.text = "";
+      firstEntry.toYearController.text = "";
+      firstEntry.percentageController.text = "";
       print('🚀 DEBUG: Education Details - Sample data pre-populated');
     }
   }

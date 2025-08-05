@@ -37,15 +37,15 @@ class _EpfDeclarationFormState extends State<EpfDeclarationForm> {
     super.initState();
 
     // Pre-populate fields with sample data for easy testing
-    _uanController.text = "UAN12345678";
-    _previousPfController.text = "PF987654321";
-    _exitDateController.text = "2023-12-31";
-    _schemeCertificateController.text = "SC12345";
-    _ppoController.text = "PPO67890";
-    _countryController.text = "India";
-    _passportController.text = "M1234567";
-    _passportFromController.text = "2020-01-01";
-    _passportToController.text = "2030-01-01";
+    // _uanController.text = "UAN12345678";
+    // _previousPfController.text = "PF987654321";
+    // _exitDateController.text = "2023-12-31";
+    // _schemeCertificateController.text = "SC12345";
+    // _ppoController.text = "PPO67890";
+    // _countryController.text = "India";
+    // _passportController.text = "M1234567";
+    // _passportFromController.text = "2020-01-01";
+    // _passportToController.text = "2030-01-01";
 
     print('🚀 DEBUG: EPF Declaration Form - Sample data pre-populated');
   }
@@ -85,9 +85,9 @@ class _EpfDeclarationFormState extends State<EpfDeclarationForm> {
               const SizedBox(height: 20),
               _buildProvidentPensionCard(),
               const SizedBox(height: 20),
-              _buildPreviousEmploymentCard(),
-              const SizedBox(height: 20),
-              _buildInternationalWorkerCard(),
+              if (_earlierProvidentMember) _buildPreviousEmploymentCard(),
+              if (_earlierProvidentMember) const SizedBox(height: 20),
+              _buildInternationalWorkerSection(), // Changed to a single section
               const SizedBox(height: 30),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -314,7 +314,7 @@ class _EpfDeclarationFormState extends State<EpfDeclarationForm> {
     );
   }
 
-  Widget _buildInternationalWorkerCard() {
+  Widget _buildInternationalWorkerSection() {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -346,15 +346,16 @@ class _EpfDeclarationFormState extends State<EpfDeclarationForm> {
             (value) => setState(() => _isInternationalWorker = value),
           ),
           const SizedBox(height: 16),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              if (constraints.maxWidth < 600) {
-                return _buildMobileInternationalLayout();
-              } else {
-                return _buildDesktopInternationalLayout();
-              }
-            },
-          ),
+          if (_isInternationalWorker) // Conditionally render text fields
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth < 600) {
+                  return _buildMobileInternationalLayout();
+                } else {
+                  return _buildDesktopInternationalLayout();
+                }
+              },
+            ),
         ],
       ),
     );
@@ -584,13 +585,16 @@ class _EpfDeclarationFormState extends State<EpfDeclarationForm> {
   Widget _buildSubmitButton() {
     return ElevatedButton.icon(
       onPressed: _submitForm,
-      label: const Text(
-        'Continue to Nomination Form',
-        style: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-          letterSpacing: 0.2,
+      label: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: const Text(
+          'Continue to Nomination Form',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+            letterSpacing: 0.2,
+          ),
         ),
       ),
       style: ElevatedButton.styleFrom(
@@ -610,12 +614,16 @@ class _EpfDeclarationFormState extends State<EpfDeclarationForm> {
     print('🐛 DEBUG: ===== EPF DECLARATION FORM SUBMISSION =====');
     print('🐛 DEBUG: Earlier Provident Member: $_earlierProvidentMember');
     print('🐛 DEBUG: Earlier Pension Member: $_earlierPensionMember');
-    print('🐛 DEBUG: UAN Number: ${_uanController.text}');
-    print('🐛 DEBUG: Previous PF Number: ${_previousPfController.text}');
-    print('🐛 DEBUG: Exit Date: ${_exitDateController.text}');
+    if (_earlierProvidentMember) {
+      print('🐛 DEBUG: UAN Number: ${_uanController.text}');
+      print('🐛 DEBUG: Previous PF Number: ${_previousPfController.text}');
+      print('🐛 DEBUG: Exit Date: ${_exitDateController.text}');
+    }
     print('🐛 DEBUG: International Worker: $_isInternationalWorker');
-    print('🐛 DEBUG: Country: ${_countryController.text}');
-    print('🐛 DEBUG: Passport Number: ${_passportController.text}');
+    if (_isInternationalWorker) {
+      print('🐛 DEBUG: Country: ${_countryController.text}');
+      print('🐛 DEBUG: Passport Number: ${_passportController.text}');
+    }
 
     if (_formKey.currentState!.validate()) {
       // Update provider with EPF data
@@ -623,16 +631,20 @@ class _EpfDeclarationFormState extends State<EpfDeclarationForm> {
       final epfData = {
         'pf_member': _earlierProvidentMember ? 'Yes' : 'No',
         'pension_member': _earlierPensionMember ? 'Yes' : 'No',
-        'uan_number': _uanController.text,
-        'previous_pf_number': _previousPfController.text,
-        'exit_date': _exitDateController.text,
-        'scheme_certificate': _schemeCertificateController.text,
-        'ppo': _ppoController.text,
+        if (_earlierProvidentMember) 'uan_number': _uanController.text,
+        if (_earlierProvidentMember)
+          'previous_pf_number': _previousPfController.text,
+        if (_earlierProvidentMember) 'exit_date': _exitDateController.text,
+        if (_earlierProvidentMember)
+          'scheme_certificate': _schemeCertificateController.text,
+        if (_earlierProvidentMember) 'ppo': _ppoController.text,
         'international_worker': _isInternationalWorker ? 'Yes' : 'No',
-        'country_origin': _countryController.text,
-        'passport_number': _passportController.text,
-        'passport_valid_from': _passportFromController.text,
-        'passport_valid_to': _passportToController.text,
+        if (_isInternationalWorker) 'country_origin': _countryController.text,
+        if (_isInternationalWorker) 'passport_number': _passportController.text,
+        if (_isInternationalWorker)
+          'passport_valid_from': _passportFromController.text,
+        if (_isInternationalWorker)
+          'passport_valid_to': _passportToController.text,
       };
 
       provider.updateFormData('epf_declaration', epfData);

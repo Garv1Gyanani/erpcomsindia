@@ -1,7 +1,14 @@
+import 'dart:convert';
+
+import 'package:coms_india/features/employee/models/employee.dart';
+import 'package:coms_india/features/shift/models/site_shift_model.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../utils/constants.dart';
 import '../di/service_locator.dart';
 import 'storage_service.dart';
+import 'package:http/http.dart' as http;
 
 class ApiService {
   late final Dio _dio;
@@ -72,6 +79,134 @@ class ApiService {
     ));
   }
 
+  List<Site> siteListFromJson(String str) =>
+      List<Site>.from(json.decode(str)['data'].map((x) => Site.fromJson(x)));
+
+  final String _baseUrl = 'https://erp.comsindia.in/api';
+
+  Future<List<Site>> fetchSitesAndShifts(String token) async {
+    // ... (previous code is unchanged)
+    final url = Uri.parse('$_baseUrl/weekend/site/list');
+
+    final headers = {
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    };
+
+    try {
+      final response = await http.get(url, headers: headers);
+
+      if (response.statusCode == 200) {
+        return siteListFromJson(response.body);
+      } else {
+        throw Exception(
+            'Failed to load site list. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('An error occurred while fetching sites: $e');
+    }
+  }
+
+  // --- NEW METHOD ---
+  Future<List<Employee>> fetchEmployeesForShift(
+      String token, int siteId, int shiftId) async {
+    final url = Uri.parse('$_baseUrl/weekend/site/$siteId/shift/$shiftId');
+
+    final headers = {
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    };
+
+    try {
+      final response = await http.get(url, headers: headers);
+
+      if (response.statusCode == 200) {
+        // Use the new model helper to parse the response
+        return employeeListFromJson(response.body);
+      } else {
+        throw Exception(
+            'Failed to load employee list. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('An error occurred while fetching employees: $e');
+    }
+  }
+
+  Future<void> assignWeekends({
+    required String token,
+    required int siteId,
+    required List<Employee> employees,
+  }) async {
+    final url = Uri.parse('$_baseUrl/weekend/emp/assign');
+    final headers = {
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    };
+
+    for (final employee in employees) {
+      if (employee.selectedDays.isEmpty) {
+        debugPrint('Skipping ${employee.name} — no selected days.');
+        continue;
+      }
+
+      debugPrint(
+          'Preparing request for ${employee.name} (ID: ${employee.userId})');
+
+      var request = http.MultipartRequest('POST', url);
+      request.headers.addAll(headers);
+
+      request.fields['site_id'] = siteId.toString();
+      request.fields['user_id'] = employee.userId.toString();
+
+      List<String> daysList = employee.selectedDays.toList();
+      for (int i = 0; i < daysList.length; i++) {
+        request.fields['days[$i]'] = daysList[i];
+      }
+
+      // Print full request fields for debugging
+      debugPrint('Request fields for ${employee.name}: ${request.fields}');
+
+      try {
+        final response = await request.send();
+        final responseBody = await response.stream.bytesToString();
+
+        debugPrint('Response for ${employee.name}: '
+            'Status ${response.statusCode}, Body: $responseBody');
+
+        if (response.statusCode != 200 && response.statusCode != 201) {
+          throw Exception(
+            '❌ Failed to assign weekend for ${employee.name}. '
+            'Status: ${response.statusCode}, Body: $responseBody',
+          );
+        } else {
+          debugPrint('✅ Weekend assigned successfully for ${employee.name}');
+        }
+      } catch (e) {
+        debugPrint('🚨 Exception for ${employee.name}: $e');
+        throw Exception(
+          'An error occurred while submitting for ${employee.name}: $e',
+        );
+      }
+    }
+
+    debugPrint('All weekend assignments completed.');
+  }
+
+  Future<List<SiteGroup>> fetchWeekendList(String token) async {
+    final url = Uri.parse('$_baseUrl/weekend/emp/list');
+    final headers = {
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json'
+    };
+    final response = await http.get(url, headers: headers);
+    if (response.statusCode == 200) {
+      return siteGroupListFromJson(response.body);
+    } else {
+      throw Exception(
+          'Failed to load weekend list. Status: ${response.statusCode}');
+    }
+  }
+
   // Verify mobile number and request OTP
   Future<Response> verifyMobile(String mobile) async {
     try {
@@ -81,6 +216,29 @@ class ApiService {
       print('Verify Mobile Response: ${response.data}');
       return response;
     } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Response> getClientEmployees(String token) async {
+    try {
+      print(
+          'Getting client employees with token: ${token.substring(0, 15)}...');
+
+      final response = await _dio.get(
+        '$_baseUrl/client/emp',
+        options: Options(
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      print('Client employees response status: ${response.statusCode}');
+      return response;
+    } catch (e) {
+      print('Error getting client employees: $e');
       rethrow;
     }
   }
@@ -108,7 +266,7 @@ class ApiService {
     }
   }
 
-  Future<Response> logout(String token) async {
+  Future<Response> logout(String token, BuildContext context) async {
     try {
       // Set the authorization header with the token
       _dio.options.headers['Authorization'] = 'Bearer $token';
@@ -125,7 +283,7 @@ class ApiService {
         ),
       );
       print('Logout response: ${response.data}');
-
+      context.goNamed('login');
       return response;
     } catch (e) {
       print('API Logout error: ${e.toString()}');
