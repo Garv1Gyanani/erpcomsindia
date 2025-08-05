@@ -158,6 +158,8 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
     _loadDepartments();
     _loadSites();
     _loadLocations();
+    _addEpfNominee(); // Ensure one EPF nominee is always present
+    _addEpsNominee(); // Ensure one EPS nominee is added
   }
 
   void _initializeEmptyControllers() {
@@ -599,25 +601,34 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
       MapEntry('previous_pf_number', _previousPfNumberController.text),
       MapEntry('international_worker', _internationalWorkerStatus ?? "no"),
     ]);
+    String emptyIfNull(TextEditingController? controller) {
+      if (controller == null) return '';
+      final text = controller.text.trim();
+      return text.isEmpty ? '' : text;
+    }
 
     for (int i = 0; i < _epfNominees.length; i++) {
+      final nominee = _epfNominees[i];
+
       formData.fields.addAll([
-        MapEntry('epf[$i][name]', _epfNominees[i]['name']!.text),
-        MapEntry('epf[$i][address]', _epfNominees[i]['address']!.text),
-        MapEntry(
-            'epf[$i][relationship]', _epfNominees[i]['relationship']!.text),
-        MapEntry('epf[$i][dob]', _epfNominees[i]['dob']!.text),
-        MapEntry('epf[$i][share]', _epfNominees[i]['share']!.text),
-        MapEntry('epf[$i][guardian]', _epfNominees[i]['guardian']!.text),
+        MapEntry('epf[$i][name]', emptyIfNull(nominee['name'])),
+        MapEntry('epf[$i][address]', emptyIfNull(nominee['address'])),
+        MapEntry('epf[$i][relationship]', emptyIfNull(nominee['relationship'])),
+        MapEntry('epf[$i][dob]', emptyIfNull(nominee['dob'])),
+        MapEntry('epf[$i][share]', emptyIfNull(nominee['share'])),
+        MapEntry('epf[$i][guardian]', emptyIfNull(nominee['guardian'])),
       ]);
     }
 
     for (int i = 0; i < _epsNominees.length; i++) {
+      final name = emptyIfNull(_epsNominees[i]['name']);
+      final age = emptyIfNull(_epsNominees[i]['age']);
+      final relationship = emptyIfNull(_epsNominees[i]['relationship']);
+
       formData.fields.addAll([
-        MapEntry('eps[$i][name]', _epsNominees[i]['name']!.text),
-        MapEntry('eps[$i][age]', _epsNominees[i]['age']!.text),
-        MapEntry(
-            'eps[$i][relationship]', _epsNominees[i]['relationship']!.text),
+        MapEntry('eps[$i][name]', name),
+        MapEntry('eps[$i][age]', age),
+        MapEntry('eps[$i][relationship]', relationship),
       ]);
     }
 
@@ -945,28 +956,37 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
     );
   }
 
-  Widget _buildDropdownField(
-      String l, String? v, List<String> i, ValueChanged<String?> oC) {
+  Widget _buildDropdownField(String label, String? selectedValue,
+      List<String> items, ValueChanged<String?> onChanged) {
+    final uniqueItems = items.toSet().toList();
+    final validValue =
+        uniqueItems.contains(selectedValue) ? selectedValue : null;
+
     return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: DropdownButtonFormField<String>(
-            value: v,
-            decoration: InputDecoration(
-                labelText: l, border: const OutlineInputBorder()),
-            items: i
-                .map((s) => DropdownMenuItem<String>(
-                    value: s, child: Text(s[0].toUpperCase() + s.substring(1))))
-                .toList(),
-            onChanged: oC,
-            validator: (val) =>
-                val == null ? 'Please select an option' : null));
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: DropdownButtonFormField<String>(
+        value: validValue,
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+        ),
+        items: uniqueItems
+            .map((s) => DropdownMenuItem<String>(
+                  value: s,
+                  child: Text(s[0].toUpperCase() + s.substring(1)),
+                ))
+            .toList(),
+        onChanged: onChanged,
+        validator: (val) => val == null ? 'Please select an option' : null,
+      ),
+    );
   }
 
   Widget _buildLocationDropdown() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<int>(
-          value: _selectedLocationId,
+          value: _selectedLocationId ?? 0,
           isExpanded: true,
           decoration: InputDecoration(
               labelText: 'Location',
@@ -1047,25 +1067,44 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
   }
 
   Widget _buildDesignationDropdown() {
+    final designationItems = _designations
+        .map((Designation d) =>
+            DropdownMenuItem<int>(value: d.id, child: Text(d.name)))
+        .toList();
+
+    // Add a default "Select designation" item
+    designationItems.insert(
+      0,
+      const DropdownMenuItem<int>(
+        value: 0,
+        child: Text('Select designation'),
+      ),
+    );
+
+    // Ensure selected value is valid
+    final isValidValue =
+        _designations.any((d) => d.id == _selectedDesignationId);
+    final dropdownValue = isValidValue ? _selectedDesignationId : 0;
+
     return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: DropdownButtonFormField<int>(
-            value: _selectedDesignationId,
-            decoration: InputDecoration(
-                labelText: 'Designation',
-                border: const OutlineInputBorder(),
-                hintText: _selectedDepartmentId == null
-                    ? 'Select a department first'
-                    : 'Select designation'),
-            onChanged: _selectedDepartmentId == null
-                ? null
-                : (int? v) => setState(() => _selectedDesignationId = v),
-            items: _designations
-                .map((Designation d) =>
-                    DropdownMenuItem<int>(value: d.id, child: Text(d.name)))
-                .toList(),
-            validator: (v) =>
-                v == null ? 'Please select a Designation' : null));
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: DropdownButtonFormField<int>(
+        value: dropdownValue,
+        decoration: InputDecoration(
+          labelText: 'Designation',
+          border: const OutlineInputBorder(),
+          hintText: _selectedDepartmentId == null
+              ? 'Select a department first'
+              : 'Select designation',
+        ),
+        onChanged: _selectedDepartmentId == null
+            ? null
+            : (int? v) => setState(() => _selectedDesignationId = v),
+        items: designationItems,
+        validator: (v) =>
+            (v == null || v == 0) ? 'Please select a Designation' : null,
+      ),
+    );
   }
 
   List<Widget> _buildFamilyMemberFields() {
@@ -1237,16 +1276,18 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
   }
 
   void _addEpfNominee() {
-    setState(() {
-      _epfNominees.add({
-        'name': TextEditingController(),
-        'address': TextEditingController(),
-        'relationship': TextEditingController(),
-        'dob': TextEditingController(),
-        'share': TextEditingController(),
-        'guardian': TextEditingController()
+    if (_epfNominees.isEmpty) {
+      setState(() {
+        _epfNominees.add({
+          'name': TextEditingController(),
+          'address': TextEditingController(),
+          'relationship': TextEditingController(),
+          'dob': TextEditingController(),
+          'share': TextEditingController(),
+          'guardian': TextEditingController()
+        });
       });
-    });
+    }
   }
 
   void _removeEpfNominee(int i) {
@@ -1282,13 +1323,15 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
   }
 
   void _addEpsNominee() {
-    setState(() {
-      _epsNominees.add({
-        'name': TextEditingController(text: ''),
-        'age': TextEditingController(text: ''),
-        'relationship': TextEditingController(text: ''),
+    if (_epsNominees.isEmpty) {
+      setState(() {
+        _epsNominees.add({
+          'name': TextEditingController(text: ''),
+          'age': TextEditingController(text: ''),
+          'relationship': TextEditingController(text: ''),
+        });
       });
-    });
+    }
   }
 
   void _removeEpsNominee(int i) {

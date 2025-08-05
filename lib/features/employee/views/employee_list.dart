@@ -1,5 +1,3 @@
-// lib/features/employee/views/employee_list_page.dart (or your file path)
-
 import 'package:coms_india/core/services/storage_service.dart';
 import 'package:coms_india/features/employee/views/basic_info.dart';
 import 'package:flutter/material.dart';
@@ -55,6 +53,7 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
       );
 
       print('🔍 API Response Status: ${response.statusCode}');
+      // print('🔍 API Response Body: ${response.body}'); // Can be very long
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
@@ -141,10 +140,7 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
                   MaterialPageRoute(
                     builder: (context) => const AddEmployeePage(),
                   ),
-                ).then((_) {
-                  // Refresh list after adding an employee
-                  _refreshEmployees();
-                });
+                );
               },
               child: const Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -205,31 +201,19 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
     }
 
     if (_employeesBySite == null || _employeesBySite!.isEmpty) {
-      return RefreshIndicator(
-        onRefresh: _refreshEmployees,
-        child: ListView(
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SizedBox(height: MediaQuery.of(context).size.height * 0.3),
-            const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.business_outlined,
-                    size: 64,
-                    color: Colors.grey,
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'No sites or employees found',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                  Text(
-                    'Pull down to refresh',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ],
-              ),
+            Icon(
+              Icons.business_outlined,
+              size: 64,
+              color: Colors.grey,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'No sites found',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
           ],
         ),
@@ -323,30 +307,25 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
         (emp['roles'] as List<dynamic>?)?.contains('Supervisor') ?? false;
 
     return ListTile(
-      onTap: () async {
-        // When navigating to the edit page, we can pass a callback
-        // or simply refresh when we pop back.
-        final result = await context.push(
-          '/employee/edit/${emp['id']}',
-          extra: {'name': emp['name']},
+      onTap: () {
+        context.push(
+          '/employee/${emp['id']}',
+          extra: emp['name'],
         );
-        // If the edit page returned 'true' (meaning a successful update), refresh the list.
-        if (result == true) {
-          _refreshEmployees();
-        }
       },
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading: CircleAvatar(
-        backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
-        onBackgroundImageError: imageUrl != null ? (e, s) {} : null,
-        child: imageUrl == null
-            ? Text(
+      leading: imageUrl != null
+          ? CircleAvatar(
+              backgroundImage: NetworkImage(imageUrl),
+              onBackgroundImageError: (e, s) => const Icon(Icons.person),
+            )
+          : CircleAvatar(
+              child: Text(
                 emp['name']?.toString().isNotEmpty == true
                     ? emp['name'][0].toUpperCase()
                     : '?',
-              )
-            : null,
-      ),
+              ),
+            ),
       title: Row(
         children: [
           Expanded(
@@ -363,7 +342,7 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               margin: const EdgeInsets.only(left: 8),
               decoration: BoxDecoration(
-                color: Colors.orange.shade700,
+                color: Colors.orange,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Text(
@@ -393,23 +372,22 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
               tooltip: 'Delete Employee',
               onPressed: () {
                 if (emp['id'] != null) {
-                  _deleteEmployee(emp['id'], emp['name']);
+                  _deleteEmployee(emp['id']);
                 }
               },
             ),
     );
   }
 
-  /// ========================================================================
-  /// ========= THIS IS THE CORRECTED DELETE EMPLOYEE METHOD =========
-  /// ========================================================================
-  void _deleteEmployee(int employeeId, String employeeName) async {
+  void _deleteEmployee(
+    int employeeId,
+  ) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirm Deletion'),
         content: Text(
-            'Are you sure you want to delete this employee: $employeeName? This action cannot be undone.'),
+            'Are you sure you want to delete this employee? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
