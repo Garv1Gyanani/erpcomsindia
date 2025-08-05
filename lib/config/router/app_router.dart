@@ -4,7 +4,6 @@ import 'package:coms_india/features/employee/views/education_details.dart';
 import 'package:coms_india/features/employee/views/employee_details.dart';
 import 'package:coms_india/features/employee/views/employee_edit.dart';
 import 'package:coms_india/features/employee/views/employee_list.dart';
-import 'package:coms_india/features/employee/views/employement_screen.dart';
 import 'package:coms_india/features/employee/views/employment_screen.dart';
 import 'package:coms_india/features/employee/views/employment_details.dart';
 import 'package:coms_india/features/employee/views/esic_declaration_form.dart';

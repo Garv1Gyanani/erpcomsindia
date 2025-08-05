@@ -327,7 +327,7 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
         // When navigating to the edit page, we can pass a callback
         // or simply refresh when we pop back.
         final result = await context.push(
-          '/employee_edit/${emp['id']}',
+          '/employee/edit/${emp['id']}',
           extra: {'name': emp['name']},
         );
         // If the edit page returned 'true' (meaning a successful update), refresh the list.
