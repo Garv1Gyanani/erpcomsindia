@@ -1,3 +1,5 @@
+// lib/features/employee/views/employee_list_page.dart (or your file path)
+
 import 'package:coms_india/core/services/storage_service.dart';
 import 'package:coms_india/features/employee/views/basic_info.dart';
 import 'package:flutter/material.dart';
@@ -53,7 +55,6 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
       );
 
       print('🔍 API Response Status: ${response.statusCode}');
-      // print('🔍 API Response Body: ${response.body}'); // Can be very long
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
@@ -140,7 +141,10 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
                   MaterialPageRoute(
                     builder: (context) => const AddEmployeePage(),
                   ),
-                );
+                ).then((_) {
+                  // Refresh list after adding an employee
+                  _refreshEmployees();
+                });
               },
               child: const Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -201,19 +205,31 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
     }
 
     if (_employeesBySite == null || _employeesBySite!.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      return RefreshIndicator(
+        onRefresh: _refreshEmployees,
+        child: ListView(
           children: [
-            Icon(
-              Icons.business_outlined,
-              size: 64,
-              color: Colors.grey,
-            ),
-            SizedBox(height: 16),
-            Text(
-              'No sites found',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+            const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.business_outlined,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'No sites or employees found',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                  Text(
+                    'Pull down to refresh',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -307,25 +323,30 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
         (emp['roles'] as List<dynamic>?)?.contains('Supervisor') ?? false;
 
     return ListTile(
-      onTap: () {
-        context.push(
-          '/employee/${emp['id']}',
-          extra: emp['name'],
+      onTap: () async {
+        // When navigating to the edit page, we can pass a callback
+        // or simply refresh when we pop back.
+        final result = await context.push(
+          '/employee_edit/${emp['id']}',
+          extra: {'name': emp['name']},
         );
+        // If the edit page returned 'true' (meaning a successful update), refresh the list.
+        if (result == true) {
+          _refreshEmployees();
+        }
       },
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading: imageUrl != null
-          ? CircleAvatar(
-              backgroundImage: NetworkImage(imageUrl),
-              onBackgroundImageError: (e, s) => const Icon(Icons.person),
-            )
-          : CircleAvatar(
-              child: Text(
+      leading: CircleAvatar(
+        backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
+        onBackgroundImageError: imageUrl != null ? (e, s) {} : null,
+        child: imageUrl == null
+            ? Text(
                 emp['name']?.toString().isNotEmpty == true
                     ? emp['name'][0].toUpperCase()
                     : '?',
-              ),
-            ),
+              )
+            : null,
+      ),
       title: Row(
         children: [
           Expanded(
@@ -342,7 +363,7 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               margin: const EdgeInsets.only(left: 8),
               decoration: BoxDecoration(
-                color: Colors.orange,
+                color: Colors.orange.shade700,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Text(
@@ -372,19 +393,23 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
               tooltip: 'Delete Employee',
               onPressed: () {
                 if (emp['id'] != null) {
-                  _deleteEmployee(emp['id']);
+                  _deleteEmployee(emp['id'], emp['name']);
                 }
               },
             ),
     );
   }
 
-  void _deleteEmployee(int employeeId) async {
+  /// ========================================================================
+  /// ========= THIS IS THE CORRECTED DELETE EMPLOYEE METHOD =========
+  /// ========================================================================
+  void _deleteEmployee(int employeeId, String employeeName) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirm Deletion'),
-        content: const Text('Are you sure you want to delete this employee?'),
+        content: Text(
+            'Are you sure you want to delete this employee: $employeeName? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -402,34 +427,64 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
 
     final token = await _storageService.getToken();
     if (token == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Not authenticated')));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Not authenticated. Please log in again.'),
+        backgroundColor: Colors.red,
+      ));
       return;
     }
 
     try {
+      // Corrected URL to match the curl command: .../delete/{id}
+      final url =
+          Uri.parse('https://erp.comsindia.in/api/employee/delete/$employeeId');
+
       final response = await http.delete(
-        Uri.parse('https://erp.comsindia.in/api/employee/$employeeId/delete'),
-        headers: {'Authorization': 'Bearer $token'},
+        url,
+        headers: {
+          // Added 'Accept' header to match curl command
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
       );
+
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['status'] == true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Employee deleted successfully')));
-          _refreshEmployees(); // Refresh the list
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Employee deleted successfully'),
+            backgroundColor: Colors.green,
+          ));
+          _refreshEmployees(); // Refresh the list to show the change
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(data['message'] ?? 'Failed to delete')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(data['message'] ?? 'Failed to delete employee.'),
+            backgroundColor: Colors.red,
+          ));
         }
       } else {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Error deleting')));
+        String errorMessage =
+            'Error deleting employee. Status code: ${response.statusCode}';
+        try {
+          final data = json.decode(response.body);
+          errorMessage = data['message'] ?? errorMessage;
+        } catch (e) {
+          // Ignore if response body is not valid JSON
+        }
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+        ));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('An error occurred: $e')));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('An error occurred: $e'),
+        backgroundColor: Colors.red,
+      ));
     }
   }
 }
