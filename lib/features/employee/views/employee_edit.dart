@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import 'dart:io';
 import 'package:coms_india/core/di/service_locator.dart';
@@ -699,7 +698,7 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Employee updated successfully!'),
             backgroundColor: Colors.green));
-        Navigator.of(context).pop(true); 
+        Navigator.of(context).pop(true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(response.data['message']?.toString() ??
