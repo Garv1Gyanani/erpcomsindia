@@ -53,22 +53,24 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
   final StorageService _storageService = StorageService();
 
   Future<void> _selectDate(BuildContext context,
-      Function(DateTime) onDatePicked, bool isFamilyMember) async {
+      Function(DateTime) onDatePicked, bool isForJoiningDate) async {
     final DateTime now = DateTime.now();
-    final DateTime initialDate = DateTime(1950);
+    final DateTime initialDate =
+        (isForJoiningDate ? _doj : _dob) ?? DateTime(1900);
+    final DateTime firstDate = DateTime(1900);
     final DateTime lastDate =
-        DateTime(now.year, now.month, now.day); // Today's date
+        isForJoiningDate ? now : DateTime(now.year, now.month, now.day - 1);
 
     DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: now,
-      firstDate: initialDate,
+      initialDate: initialDate,
+      firstDate: firstDate,
       lastDate: lastDate,
     );
 
     if (picked != null) {
-      if (picked.isAfter(lastDate)) {
-        // Optionally display an error message if the selected date is in the future
+      if (!isForJoiningDate &&
+          picked.isAfter(DateTime(now.year, now.month, now.day - 1))) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
               content: Text('Date of Birth cannot be today or a future date.')),
@@ -243,19 +245,6 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
   void initState() {
     super.initState();
     _checkPermission(); // Check permission when the page loads
-    // Pre-populate fields with sample data for easy testing
-    // _nameController.text = "Utkarsh";
-    // _selectedGender = "Male";
-    // _selectedStatus = "Married";
-    // _selectedBloodGroup = "A+";
-    // _selectedReligion = "Hindu";
-    // _dob = DateTime(1990, 1, 1);
-    // _doj = DateTime(2025, 6, 10);
-    // // Pre-populate first family member
-    // familyMembers[0].nameController.text = "Jane Doe";
-    // familyMembers[0].relationController.text = "Wife";
-    // familyMembers[0].occupationController.text = "Teacher";
-    // familyMembers[0].dateOfBirth = DateTime(1992, 1, 1);
   }
 
   @override
@@ -339,7 +328,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                               _buildDatePicker('Date of Joining *', _doj,
                                   (date) {
                                 setState(() => _doj = date);
-                              }),
+                              }, isForJoiningDate: true),
                             ]),
                             rowWrap([
                               _buildDropdown('Blood Group', _bloodGroupOptions,
@@ -413,9 +402,8 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        const Text('Relation',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w500)),
+                                        _buildLabelWithAsterisk('Relation *',
+                                            isRequired: true),
                                         const SizedBox(height: 4),
                                         TextFormField(
                                           controller: member.relationController,
@@ -439,6 +427,13 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                                                     horizontal: 12,
                                                     vertical: 8),
                                           ),
+                                          validator: (value) {
+                                            if (value == null ||
+                                                value.isEmpty) {
+                                              return 'This field is required';
+                                            }
+                                            return null;
+                                          },
                                         ),
                                       ],
                                     ),
@@ -449,9 +444,8 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        const Text('Occupation',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w500)),
+                                        _buildLabelWithAsterisk('Occupation *',
+                                            isRequired: true),
                                         const SizedBox(height: 4),
                                         TextFormField(
                                           controller:
@@ -476,6 +470,13 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                                                     horizontal: 12,
                                                     vertical: 8),
                                           ),
+                                          validator: (value) {
+                                            if (value == null ||
+                                                value.isEmpty) {
+                                              return 'This field is required';
+                                            }
+                                            return null;
+                                          },
                                         ),
                                       ],
                                     ),
@@ -484,16 +485,16 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        const Text('Date of Birth',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w500)),
+                                        _buildLabelWithAsterisk(
+                                            'Date of Birth *',
+                                            isRequired: true),
                                         const SizedBox(height: 4),
                                         InkWell(
                                           onTap: () =>
                                               _selectDate(context, (date) {
                                             setState(() =>
                                                 member.dateOfBirth = date);
-                                          }, true),
+                                          }, false),
                                           child: Container(
                                             padding: const EdgeInsets.symmetric(
                                                 horizontal: 12, vertical: 12),
@@ -651,9 +652,9 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
     );
   }
 
-  Widget _buildLabelWithAsterisk(String label) {
+  Widget _buildLabelWithAsterisk(String label, {bool isRequired = false}) {
     List<String> parts = label.split(' *');
-    if (parts.length > 1) {
+    if (parts.length > 1 || isRequired) {
       return RichText(
         text: TextSpan(
           style: const TextStyle(
@@ -706,13 +707,14 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
   }
 
   Widget _buildDatePicker(
-      String label, DateTime? selectedDate, Function(DateTime) onDatePicked) {
+      String label, DateTime? selectedDate, Function(DateTime) onDatePicked,
+      {bool isForJoiningDate = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: InkWell(
         onTap: () => _selectDate(context, (date) {
           onDatePicked(date);
-        }, false),
+        }, isForJoiningDate),
         child: InputDecorator(
           decoration: InputDecoration(
             label: _buildLabelWithAsterisk(label),
@@ -783,7 +785,27 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                 }
               } else {
                 // Submit the form on the final step
-                _submitForm();
+                // Validate Family Information before submission
+                bool isValid = true;
+                for (var member in familyMembers) {
+                  if (member.nameController.text.isEmpty ||
+                      member.relationController.text.isEmpty ||
+                      member.occupationController.text.isEmpty ||
+                      member.dateOfBirth == null) {
+                    isValid = false;
+                    break;
+                  }
+                }
+
+                if (isValid && _formKey.currentState!.validate()) {
+                  _submitForm();
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text(
+                            'Please fill in all required fields in Family Information.')),
+                  );
+                }
               }
             },
             child: Text(

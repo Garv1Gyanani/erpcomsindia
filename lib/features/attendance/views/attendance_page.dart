@@ -15,8 +15,13 @@ class AttendancePage extends StatefulWidget {
 class _AttendancePageState extends State<AttendancePage>
     with TickerProviderStateMixin {
   late TabController _tabController;
-  Set<int> selectedEmployees = <int>{};
-  bool selectAll = false;
+
+  // MODIFIED: Separate selection sets for clarity and correctness
+  final Set<int> _selectedForPunchIn = <int>{};
+  final Set<int> _selectedForPunchOut = <int>{};
+
+  bool _selectAllPunchIn = false;
+  bool _selectAllPunchOut = false;
 
   @override
   void initState() {
@@ -31,6 +36,16 @@ class _AttendancePageState extends State<AttendancePage>
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  // Helper to reset selection when shift changes
+  void _resetSelection() {
+    setState(() {
+      _selectedForPunchIn.clear();
+      _selectedForPunchOut.clear();
+      _selectAllPunchIn = false;
+      _selectAllPunchOut = false;
+    });
   }
 
   @override
@@ -95,7 +110,7 @@ class _AttendancePageState extends State<AttendancePage>
               Expanded(
                 child: controller.isLoading && controller.employees.isEmpty
                     ? const Center(child: CircularProgressIndicator())
-                    : _buildEmployeeSelectionList(controller),
+                    : _buildEmployeeLists(controller),
               ),
             ],
           ],
@@ -192,8 +207,7 @@ class _AttendancePageState extends State<AttendancePage>
               if (shiftId != null) {
                 controller.setSelectedShift(shiftId);
                 controller.fetchEmployeesByShift(shiftId);
-                selectedEmployees.clear();
-                selectAll = false;
+                _resetSelection();
               }
             },
           ),
@@ -203,8 +217,11 @@ class _AttendancePageState extends State<AttendancePage>
   }
 
   Widget _buildPunchInOutControls(AttendanceController controller) {
-    final hasSelectedEmployees = selectedEmployees.isNotEmpty;
-    final availableEmployees = controller.getAvailableForPunchInEmployees();
+    // MODIFIED: Logic now depends on the specific selection sets
+    final canPunchIn = _selectedForPunchIn.isNotEmpty;
+    final canPunchOut = _selectedForPunchOut.isNotEmpty;
+    final totalSelected =
+        _selectedForPunchIn.length + _selectedForPunchOut.length;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -221,30 +238,12 @@ class _AttendancePageState extends State<AttendancePage>
               Icon(Icons.people, color: Colors.blue.shade700),
               const SizedBox(width: 8),
               Text(
-                '${selectedEmployees.length} employee(s) selected',
+                '$totalSelected employee(s) selected',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: Colors.blue.shade800,
                 ),
-              ),
-              const Spacer(),
-              TextButton(
-                onPressed: availableEmployees.isNotEmpty
-                    ? () {
-                        setState(() {
-                          if (selectAll) {
-                            selectedEmployees.clear();
-                            selectAll = false;
-                          } else {
-                            selectedEmployees.addAll(
-                                availableEmployees.map((e) => e.userId));
-                            selectAll = true;
-                          }
-                        });
-                      }
-                    : null,
-                child: Text(selectAll ? 'Deselect All' : 'Select All'),
               ),
             ],
           ),
@@ -253,9 +252,8 @@ class _AttendancePageState extends State<AttendancePage>
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: hasSelectedEmployees
-                      ? () => _handlePunchIn(controller)
-                      : null,
+                  onPressed:
+                      canPunchIn ? () => _handlePunchIn(controller) : null,
                   icon: const Icon(Icons.login, color: Colors.white),
                   label: const Text('Punch In',
                       style: TextStyle(color: Colors.white)),
@@ -264,15 +262,15 @@ class _AttendancePageState extends State<AttendancePage>
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8)),
+                    disabledBackgroundColor: Colors.green.withOpacity(0.5),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: hasSelectedEmployees
-                      ? () => _handlePunchOut(controller)
-                      : null,
+                  onPressed:
+                      canPunchOut ? () => _handlePunchOut(controller) : null,
                   icon: const Icon(Icons.logout, color: Colors.white),
                   label: const Text('Punch Out',
                       style: TextStyle(color: Colors.white)),
@@ -281,6 +279,7 @@ class _AttendancePageState extends State<AttendancePage>
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8)),
+                    disabledBackgroundColor: Colors.orange.withOpacity(0.5),
                   ),
                 ),
               ),
@@ -291,7 +290,14 @@ class _AttendancePageState extends State<AttendancePage>
     );
   }
 
-  Widget _buildEmployeeSelectionList(AttendanceController controller) {
+  // NEW: A parent widget to hold the separated employee lists.
+  Widget _buildEmployeeLists(AttendanceController controller) {
+    final onDutyEmployees = controller.getOnDutyEmployees();
+    final availableEmployees = controller.getAvailableForPunchInEmployees();
+    final weekendEmployees = controller.employees
+        .where((e) => controller.isEmployeeOnWeekend(e.userId))
+        .toList();
+
     if (controller.employees.isEmpty) {
       return const Center(
         child: Text(
@@ -301,200 +307,238 @@ class _AttendancePageState extends State<AttendancePage>
       );
     }
 
-    return ListView.builder(
+    return ListView(
       padding: const EdgeInsets.all(16),
-      itemCount: controller.employees.length,
-      itemBuilder: (context, index) {
-        final employee = controller.employees[index];
-        final isSelected = selectedEmployees.contains(employee.userId);
-        final attendanceStatus =
-            controller.getEmployeeAttendanceStatus(employee.userId);
-        final isOnDuty = controller.isEmployeeOnDuty(employee.userId);
-        final isWeekend = controller.isEmployeeOnWeekend(employee.userId);
+      children: [
+        // --- ON DUTY LIST (FOR PUNCH OUT) ---
+        if (onDutyEmployees.isNotEmpty)
+          _buildListSection(
+            title: "On Duty (${onDutyEmployees.length})",
+            icon: Icons.check_circle,
+            iconColor: Colors.green,
+            employees: onDutyEmployees,
+            controller: controller,
+            isForPunchIn: false,
+          ),
 
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: Builder(builder: (context) {
-            if (isWeekend) {
-              return _buildWeekendEmployeeTile(employee, attendanceStatus);
-            } else if (isOnDuty) {
-              return _buildOnDutyEmployeeTile(
-                  employee, attendanceStatus, controller);
+        // --- AVAILABLE LIST (FOR PUNCH IN) ---
+        if (availableEmployees.isNotEmpty)
+          _buildListSection(
+            title: "Available for Punch In (${availableEmployees.length})",
+            icon: Icons.person_add_alt_1,
+            iconColor: Colors.red,
+            employees: availableEmployees,
+            controller: controller,
+            isForPunchIn: true,
+          ),
+
+        // --- WEEKEND/LEAVE LIST (NON-SELECTABLE) ---
+        if (weekendEmployees.isNotEmpty)
+          _buildListSection(
+              title: "On Weekend/Leave (${weekendEmployees.length})",
+              icon: Icons.bedtime,
+              iconColor: Colors.blueGrey,
+              employees: weekendEmployees,
+              controller: controller,
+              isSelectable: false),
+      ],
+    );
+  }
+
+  // NEW: A reusable widget for each list section (On Duty, Available, etc.)
+  Widget _buildListSection({
+    required String title,
+    required IconData icon,
+    required Color iconColor,
+    required List<AttendanceEmployeeData> employees,
+    required AttendanceController controller,
+    bool isSelectable = true,
+    bool isForPunchIn = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 16.0, bottom: 8.0, left: 4.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: iconColor, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87),
+                  ),
+                ],
+              ),
+              if (isSelectable)
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      if (isForPunchIn) {
+                        _selectAllPunchIn = !_selectAllPunchIn;
+                        if (_selectAllPunchIn) {
+                          _selectedForPunchIn
+                              .addAll(employees.map((e) => e.userId));
+                        } else {
+                          _selectedForPunchIn.clear();
+                        }
+                      } else {
+                        _selectAllPunchOut = !_selectAllPunchOut;
+                        if (_selectAllPunchOut) {
+                          _selectedForPunchOut
+                              .addAll(employees.map((e) => e.userId));
+                        } else {
+                          _selectedForPunchOut.clear();
+                        }
+                      }
+                    });
+                  },
+                  child: Text(isForPunchIn
+                      ? (_selectAllPunchIn ? 'Deselect All' : 'Select All')
+                      : (_selectAllPunchOut ? 'Deselect All' : 'Select All')),
+                )
+            ],
+          ),
+        ),
+        ...employees.map((employee) {
+          if (!isSelectable) {
+            return _buildWeekendEmployeeTile(employee,
+                controller.getEmployeeAttendanceStatus(employee.userId));
+          }
+          return _buildSelectableEmployeeTile(
+            employee: employee,
+            controller: controller,
+            isForPunchIn: isForPunchIn,
+          );
+        }).toList(),
+      ],
+    );
+  }
+
+  // MODIFIED: A generic tile for selectable employees.
+  Widget _buildSelectableEmployeeTile({
+    required AttendanceEmployeeData employee,
+    required AttendanceController controller,
+    required bool isForPunchIn,
+  }) {
+    final isSelected = isForPunchIn
+        ? _selectedForPunchIn.contains(employee.userId)
+        : _selectedForPunchOut.contains(employee.userId);
+
+    final attendanceStatus =
+        controller.getEmployeeAttendanceStatus(employee.userId);
+    final color = isForPunchIn ? Colors.red : Colors.green;
+
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.only(bottom: 8),
+      child: CheckboxListTile(
+        value: isSelected,
+        onChanged: (bool? value) {
+          setState(() {
+            final selectionSet =
+                isForPunchIn ? _selectedForPunchIn : _selectedForPunchOut;
+            if (value == true) {
+              selectionSet.add(employee.userId);
             } else {
-              return _buildAvailableEmployeeTile(
-                  employee, isSelected, attendanceStatus, controller);
+              selectionSet.remove(employee.userId);
             }
-          }),
-        );
-      },
+          });
+        },
+        title: Text(employee.user.name,
+            style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(employee.user.email),
+            Text(employee.user.phone),
+            if (attendanceStatus != null &&
+                attendanceStatus.punchIn != null) ...[
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      attendanceStatus.formattedStatus,
+                      style: const TextStyle(color: Colors.white, fontSize: 10),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              ),
+            ],
+          ],
+        ),
+        secondary: CircleAvatar(
+          backgroundColor: color.withOpacity(0.1),
+          child: Text(
+            employee.user.name.isNotEmpty
+                ? employee.user.name[0].toUpperCase()
+                : '?',
+            style: TextStyle(color: color[700], fontWeight: FontWeight.bold),
+          ),
+        ),
+        activeColor: color,
+      ),
     );
   }
 
   Widget _buildWeekendEmployeeTile(
       AttendanceEmployeeData employee, AttendanceStatus? status) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: Colors.blueGrey.withOpacity(0.1),
-        child: Text(
-          employee.user.name.isNotEmpty
-              ? employee.user.name[0].toUpperCase()
-              : '?',
-          style: TextStyle(
-            color: Colors.blueGrey[700],
-            fontWeight: FontWeight.bold,
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.only(bottom: 8),
+      color: Colors.grey[200],
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.blueGrey.withOpacity(0.1),
+          child: Text(
+            employee.user.name.isNotEmpty
+                ? employee.user.name[0].toUpperCase()
+                : '?',
+            style: TextStyle(
+                color: Colors.blueGrey[700], fontWeight: FontWeight.bold),
           ),
         ),
-      ),
-      title: Text(
-        employee.user.name,
-        style:
-            const TextStyle(fontWeight: FontWeight.w600, color: Colors.black54),
-      ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(employee.user.email,
-              style: const TextStyle(color: Colors.black54)),
-          Text(employee.user.phone,
-              style: const TextStyle(color: Colors.black54)),
-          const SizedBox(height: 4),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: Colors.blueGrey,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              status?.formattedStatus ?? 'Weekend',
-              style: const TextStyle(color: Colors.white, fontSize: 10),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOnDutyEmployeeTile(AttendanceEmployeeData employee,
-      AttendanceStatus? status, AttendanceController controller) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: Colors.green.withOpacity(0.1),
-        child: Text(
-          employee.user.name.isNotEmpty
-              ? employee.user.name[0].toUpperCase()
-              : '?',
-          style: TextStyle(
-            color: Colors.green[700],
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-      title: Text(
-        employee.user.name,
-        style: const TextStyle(fontWeight: FontWeight.w600),
-      ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(employee.user.email),
-          Text(employee.user.phone),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.green,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  status?.formattedStatus ?? 'On Duty',
-                  style: const TextStyle(color: Colors.white, fontSize: 10),
-                ),
-              ),
-              if (status?.punchIn != null) ...[
-                const SizedBox(width: 8),
-                Text(
-                  'In: ${status!.punchInTime}',
-                  style: const TextStyle(fontSize: 12, color: Colors.green),
-                ),
-              ],
-            ],
-          ),
-        ],
-      ),
-      trailing: ElevatedButton.icon(
-        onPressed: () => _handleIndividualPunchOut(employee, controller),
-        icon: const Icon(Icons.logout, size: 16),
-        label: const Text('Punch Out'),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.orange,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          minimumSize: const Size(80, 36),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAvailableEmployeeTile(AttendanceEmployeeData employee,
-      bool isSelected, AttendanceStatus? attendanceStatus, controller) {
-    return CheckboxListTile(
-      value: isSelected,
-      onChanged: (bool? value) {
-        setState(() {
-          if (value == true) {
-            selectedEmployees.add(employee.userId);
-          } else {
-            selectedEmployees.remove(employee.userId);
-          }
-          final availableCount =
-              controller.getAvailableForPunchInEmployees().length;
-          selectAll =
-              availableCount > 0 && selectedEmployees.length == availableCount;
-        });
-      },
-      title: Text(
-        employee.user.name,
-        style: const TextStyle(fontWeight: FontWeight.w600),
-      ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(employee.user.email),
-          Text(employee.user.phone),
-          if (attendanceStatus != null && !attendanceStatus.isWeekend) ...[
+        title: Text(employee.user.name,
+            style: const TextStyle(
+                fontWeight: FontWeight.w600, color: Colors.black54)),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(employee.user.email,
+                style: const TextStyle(color: Colors.black54)),
             const SizedBox(height: 4),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.grey[600],
+                color: Colors.blueGrey,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                attendanceStatus.formattedStatus,
+                status?.formattedStatus ?? 'Weekend',
                 style: const TextStyle(color: Colors.white, fontSize: 10),
               ),
             ),
           ],
-        ],
-      ),
-      secondary: CircleAvatar(
-        backgroundColor: Colors.red.withOpacity(0.1),
-        child: Text(
-          employee.user.name.isNotEmpty
-              ? employee.user.name[0].toUpperCase()
-              : '?',
-          style: TextStyle(
-            color: Colors.red[700],
-            fontWeight: FontWeight.bold,
-          ),
         ),
       ),
-      activeColor: Colors.red,
     );
   }
 
+  // ... (Rest of your widgets: _buildAttendanceViewList, _buildAttendanceEmployeeTile, _buildErrorWidget remain the same)
   Widget _buildAttendanceViewList(AttendanceController controller) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -612,31 +656,30 @@ class _AttendancePageState extends State<AttendancePage>
     );
   }
 
+  // MODIFIED: Punch In handler uses the correct selection set
   void _handlePunchIn(AttendanceController controller) async {
-    if (controller.selectedShiftId == null) {
-      _showMessage('Please select a shift first');
+    if (controller.selectedShiftId == null ||
+        controller.selectedSiteId == null) {
+      _showMessage('Please select a shift first.');
       return;
     }
 
-    const int siteId = 1;
-
     final success = await controller.punchInEmployees(
-      selectedEmployees.toList(),
-      siteId,
+      _selectedForPunchIn.toList(),
+      controller.selectedSiteId!,
       controller.selectedShiftId!,
     );
 
     if (success) {
       _showMessage('Employees punched in successfully!');
-      selectedEmployees.clear();
-      selectAll = false;
-      setState(() {});
-      controller.refreshData(); // Refresh data to update the view
+      _resetSelection();
+      // No need for extra refresh, as controller state is updated internally
     } else if (controller.errorMessage != null) {
       _showMessage(controller.errorMessage!);
     }
   }
 
+  // MODIFIED: Punch Out handler uses the correct selection set
   void _handlePunchOut(AttendanceController controller) async {
     final TextEditingController remarksController = TextEditingController();
 
@@ -647,7 +690,7 @@ class _AttendancePageState extends State<AttendancePage>
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Punch out ${selectedEmployees.length} employee(s)?'),
+            Text('Punch out ${_selectedForPunchOut.length} employee(s)?'),
             const SizedBox(height: 16),
             TextField(
               controller: remarksController,
@@ -661,99 +704,50 @@ class _AttendancePageState extends State<AttendancePage>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel')),
           ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Punch Out'),
-          ),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Punch Out')),
         ],
       ),
     );
 
     if (shouldPunchOut == true) {
       final success = await controller.punchOutEmployees(
-        selectedEmployees.toList(),
+        _selectedForPunchOut.toList(),
         remarksController.text,
       );
 
       if (success) {
         _showMessage('Employees punched out successfully!');
-        selectedEmployees.clear();
-        selectAll = false;
-        setState(() {});
-        controller.refreshData();
+        _resetSelection();
+        // No need for extra refresh
       } else if (controller.errorMessage != null) {
         _showMessage(controller.errorMessage!);
       }
     }
   }
 
-  void _handleIndividualPunchOut(
-      AttendanceEmployeeData employee, AttendanceController controller) async {
-    final TextEditingController remarksController = TextEditingController();
-
-    final shouldPunchOut = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Punch Out'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Punch out ${employee.user.name}?'),
-            const SizedBox(height: 16),
-            TextField(
-              controller: remarksController,
-              decoration: const InputDecoration(
-                labelText: 'Remarks (optional)',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 2,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Punch Out'),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldPunchOut == true) {
-      final success = await controller.punchOutEmployees(
-        [employee.userId],
-        remarksController.text,
-      );
-
-      if (success) {
-        _showMessage('Employee punched out successfully!');
-        selectedEmployees.remove(employee.userId);
-        selectAll = false;
-        setState(() {});
-        controller.refreshData();
-      } else if (controller.errorMessage != null) {
-        _showMessage(controller.errorMessage!);
-      }
-    }
-  }
-
+  // ... (Rest of your methods: _loadAttendanceView, _showMessage, _navigateToEmployeeDetails remain the same)
   void _loadAttendanceView(AttendanceController controller) {
-    if (controller.selectedShiftId != null && controller.employees.isNotEmpty) {
-      const int siteId = 1;
+    if (controller.selectedShiftId != null &&
+        controller.selectedSiteId != null &&
+        controller.employees.isNotEmpty) {
       final userIds = controller.getAllUserIds();
       controller.fetchAttendanceView(
-          userIds, siteId, controller.selectedShiftId!);
+        userIds,
+        controller.selectedSiteId!, // Use dynamic siteId
+        controller.selectedShiftId!,
+      );
+    } else {
+      _showMessage(
+          "Cannot load attendance. Select a shift with employees first.");
     }
   }
 
   void _showMessage(String message) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -763,6 +757,7 @@ class _AttendancePageState extends State<AttendancePage>
   }
 
   void _navigateToEmployeeDetails(AttendanceEmployee employee) async {
+    if (!mounted) return;
     try {
       showDialog(
         context: context,

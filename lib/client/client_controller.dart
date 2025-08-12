@@ -61,23 +61,35 @@ class ClientDashboardController extends GetxController {
   Future<void> fetchEmployees() async {
     isLoading.value = true;
     errorMessage.value = '';
+    print('Starting fetchEmployees...'); // Added logging
 
     try {
       // Get token from storage
-      final token = await _storageService.getToken();
-      
-      if (token == null || token.isEmpty) {
+      print('Getting token from storage...'); // Added logging
+      final authData = await _storageService.getAllAuthData();
+      final String? authToken = authData['token'];
+
+      if (authToken == null || authToken.isEmpty) {
+        print('Authentication token not found in storage.'); // Added logging
         errorMessage.value = 'Authentication token not found';
         isLoading.value = false;
         return;
       }
 
-      print('Fetching employees with token: ${token.substring(0, 15)}...');
+      print('Fetching employees with token: ${authToken.substring(0, 15)}...');
 
       // Call API to get employees
-      final response = await _apiService.getClientEmployees(token);
+      print('Calling API to get employees...'); // Added logging
+      final response = await _apiService.getClientEmployees(authToken);
+
+      print(
+          'API response received. Status code: ${response.statusCode}'); // Added logging
+      print(
+          'API response data: ${response.data}'); //  CRITICAL: Log the entire response data
 
       if (response.data is! Map<String, dynamic>) {
+        print(
+            'Invalid response format: Response data is not a Map<String, dynamic>'); // Added logging
         throw Exception('Invalid response format');
       }
 
@@ -86,19 +98,24 @@ class ClientDashboardController extends GetxController {
 
       if (responseData['status'] == true && responseData['data'] != null) {
         final data = responseData['data'] as Map<String, dynamic>;
-        
+
         // Parse employee data
         List<EmployeeGroup> groups = [];
         int totalCount = 0;
 
+        print('Parsing employee data...'); // Added logging
         data.forEach((department, departmentData) {
+          print('Processing department: $department'); // Added logging
           if (departmentData is Map<String, dynamic>) {
             departmentData.forEach((role, roleEmployees) {
+              print('Processing role: $role'); // Added logging
               if (roleEmployees is List) {
-                List<Employee> employees = roleEmployees
-                    .map((emp) => Employee.fromJson(emp as Map<String, dynamic>))
-                    .toList();
-                
+                print('Role employees is a List'); // Added logging
+                List<Employee> employees = roleEmployees.map((emp) {
+                  print('Mapping Employee: $emp'); //Added logging
+                  return Employee.fromJson(emp as Map<String, dynamic>);
+                }).toList();
+
                 if (employees.isNotEmpty) {
                   groups.add(EmployeeGroup(
                     role: '$department - $role',
@@ -106,23 +123,33 @@ class ClientDashboardController extends GetxController {
                   ));
                   totalCount += employees.length;
                 }
+              } else {
+                print('Role employees is NOT a List'); // Added logging
               }
             });
+          } else {
+            print(
+                'Department data is NOT a Map<String, dynamic>'); // Added logging
           }
         });
 
         employeeGroups.value = groups;
         totalEmployees.value = totalCount;
-        
-        print('Loaded ${groups.length} employee groups with total ${totalCount} employees');
+
+        print(
+            'Loaded ${groups.length} employee groups with total ${totalCount} employees');
       } else {
-        errorMessage.value = responseData['message'] ?? 'Failed to fetch employees';
+        print('API returned unsuccessful status.'); // Added logging
+        errorMessage.value =
+            responseData['message'] ?? 'Failed to fetch employees';
       }
     } catch (e) {
       print('Error fetching employees: $e');
       errorMessage.value = 'Failed to fetch employees. Please try again.';
     } finally {
       isLoading.value = false;
+      print(
+          'fetchEmployees completed. isLoading: ${isLoading.value}, errorMessage: ${errorMessage.value}'); // Added logging
     }
   }
 
@@ -146,10 +173,10 @@ class ClientDashboardController extends GetxController {
   // Search employees by name
   List<Employee> searchEmployees(String query) {
     if (query.isEmpty) return [];
-    
+
     List<Employee> results = [];
     final lowerQuery = query.toLowerCase();
-    
+
     for (final group in employeeGroups) {
       for (final employee in group.employees) {
         if (employee.name.toLowerCase().contains(lowerQuery) ||
@@ -158,14 +185,14 @@ class ClientDashboardController extends GetxController {
         }
       }
     }
-    
+
     return results;
   }
 
   // Get employees by status
   List<Employee> getEmployeesByStatus(String status) {
     List<Employee> results = [];
-    
+
     for (final group in employeeGroups) {
       for (final employee in group.employees) {
         if (employee.status.toLowerCase() == status.toLowerCase()) {
@@ -173,7 +200,7 @@ class ClientDashboardController extends GetxController {
         }
       }
     }
-    
+
     return results;
   }
 }

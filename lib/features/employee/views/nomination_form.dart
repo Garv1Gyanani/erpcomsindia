@@ -566,41 +566,56 @@ class _NominationFormScreenState extends State<NominationFormScreen> {
           ],
         ),
         const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          maxLines: maxLines,
-          keyboardType: keyboardType,
-          style: const TextStyle(fontSize: 16),
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: const TextStyle(color: AppColors.gray400, fontSize: 14),
-            prefixIcon: Padding(
-              // Added Padding
-              padding: const EdgeInsets.only(
-                  left: 16.0, right: 8.0), // Adjust padding as needed
-              child: Icon(icon, color: AppColors.gray500, size: 20),
+        Stack(
+          children: [
+            TextFormField(
+              controller: controller,
+              maxLines: maxLines,
+              keyboardType: keyboardType,
+              style: const TextStyle(fontSize: 16),
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle:
+                    const TextStyle(color: AppColors.gray400, fontSize: 14),
+
+                // 👇 No prefix/prefixIcon
+                filled: true,
+                fillColor: AppColors.gray100,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      const BorderSide(color: AppColors.primary, width: 2),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.gray200),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      const BorderSide(color: AppColors.error, width: 2),
+                ),
+
+                // 👇 Make space for the icon manually
+                contentPadding: const EdgeInsets.fromLTRB(40, 16, 16, 16),
+              ),
             ),
-            filled: true,
-            fillColor: AppColors.gray100,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
+
+            // 👇 Manually positioned icon
+            Positioned(
+              top: 16,
+              left: 12,
+              child: Icon(
+                icon,
+                size: 20,
+                color: AppColors.gray500,
+              ),
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primary, width: 2),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.gray200),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.error, width: 2),
-            ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          ),
+          ],
         ),
       ],
     );

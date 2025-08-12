@@ -129,13 +129,22 @@ class ShiftResponseModel {
   });
 
   factory ShiftResponseModel.fromJson(Map<String, dynamic> json) {
+    List<ShiftData> shifts = [];
+
+    if (json['data'] != null && json['data'] is List) {
+      for (var site in json['data']) {
+        if (site['shifts'] != null && site['shifts'] is List) {
+          for (var shift in site['shifts']) {
+            shifts.add(ShiftData.fromJson(shift));
+          }
+        }
+      }
+    }
+
     return ShiftResponseModel(
       status: json['status'] ?? false,
       message: json['message'] ?? '',
-      data: (json['data'] as List?)
-              ?.map((e) => ShiftData.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
+      data: shifts,
     );
   }
 }
@@ -160,23 +169,37 @@ class ShiftData {
   });
 
   factory ShiftData.fromJson(Map<String, dynamic> json) {
+    final start = json['start_time'] ?? '';
+    final end = json['end_time'] ?? '';
+    final duration = _calculateDuration(start, end);
+
     return ShiftData(
-      id: json['id'] ?? 0,
-      name: json['name'] ?? '',
-      startTime: json['start_time'] ?? '',
-      endTime: json['end_time'] ?? '',
-      durationHours: json['duration_hours'] ?? 0,
+      id: json['shift_id'] ?? 0,
+      name: json['shift_name'] ?? '',
+      startTime: start,
+      endTime: end,
+      durationHours: duration,
       isOvertimeAllowed: (json['is_overtime_allowed'] ?? 0) == 1,
       isActive: (json['is_active'] ?? 0) == 1,
     );
   }
 
-  // Format time to AM/PM format
-  String formattedTimeRange() {
-    return '${formatTimeToAMPM(startTime)} - ${formatTimeToAMPM(endTime)}';
+  static int _calculateDuration(String start, String end) {
+    try {
+      final startTime = DateFormat('HH:mm:ss').parse(start);
+      final endTime = DateFormat('HH:mm:ss').parse(end);
+      final duration = endTime.difference(startTime).inHours;
+      return duration >= 0 ? duration : (24 + duration); // Handle overnight
+    } catch (e) {
+      return 0;
+    }
   }
 
-  String formatTimeToAMPM(String time24) {
+  String formattedTimeRange() {
+    return '${_formatTimeToAMPM(startTime)} - ${_formatTimeToAMPM(endTime)}';
+  }
+
+  String _formatTimeToAMPM(String time24) {
     try {
       final parsedTime = DateFormat('HH:mm:ss').parse(time24);
       return DateFormat('h:mm a').format(parsedTime);
@@ -411,19 +434,19 @@ class EmployeeData {
 class PunchResponse {
   final bool status;
   final String message;
-  final PunchData data;
+  final PunchData? data;
 
   PunchResponse({
     required this.status,
     required this.message,
-    required this.data,
+    this.data,
   });
 
   factory PunchResponse.fromJson(Map<String, dynamic> json) {
     return PunchResponse(
       status: json['status'] ?? false,
       message: json['message'] ?? '',
-      data: PunchData.fromJson(json['data'] ?? {}),
+      data: json['data'] != null ? PunchData.fromJson(json['data']) : null,
     );
   }
 }
@@ -432,7 +455,7 @@ class PunchData {
   final List<String> punched;
   final List<String> skippedAlreadyPunchedIn;
   final List<String>? punchedOut;
-  final List<String>? skipped;
+  final List<SkippedEmployee>? skipped;
 
   PunchData({
     required this.punched,
@@ -449,8 +472,27 @@ class PunchData {
       punchedOut: json['punched_out'] != null
           ? List<String>.from(json['punched_out'])
           : null,
-      skipped:
-          json['skipped'] != null ? List<String>.from(json['skipped']) : null,
+      skipped: json['skipped'] != null
+          ? List<SkippedEmployee>.from(
+              json['skipped'].map((e) => SkippedEmployee.fromJson(e)))
+          : null,
+    );
+  }
+}
+
+class SkippedEmployee {
+  final String empName;
+  final String reason;
+
+  SkippedEmployee({
+    required this.empName,
+    required this.reason,
+  });
+
+  factory SkippedEmployee.fromJson(Map<String, dynamic> json) {
+    return SkippedEmployee(
+      empName: json['Emp Name'] ?? '',
+      reason: json['reason'] ?? '',
     );
   }
 }

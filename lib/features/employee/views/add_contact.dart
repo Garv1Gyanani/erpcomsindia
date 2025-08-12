@@ -55,11 +55,11 @@ class _ContactFormScreenState extends State<ContactFormScreen> {
   void initState() {
     super.initState();
     // Pre-populate fields with sample data for easy testing (using unique values)
-    _phoneController.text = "9876543210";
-    _emailController.text = "utkarsh@gmail.com";
-    _emergencyContactController.text = "9876543210";
-    _emergencyContactPersonController.text = "Mike Doe";
-    _emergencyContactRelationController.text = "Brother";
+    _phoneController.text = "";
+    _emailController.text = "";
+    _emergencyContactController.text = "";
+    _emergencyContactPersonController.text = "";
+    _emergencyContactRelationController.text = "";
 
     // Pre-populate present address
     presentControllers['Street Address']?.text = "";

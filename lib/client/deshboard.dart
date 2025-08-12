@@ -1,3 +1,4 @@
+import 'package:coms_india/client/attendance_report.dart';
 import 'package:coms_india/client/client_controller.dart';
 import 'package:coms_india/core/constants/app_colors.dart';
 import 'package:coms_india/core/di/service_locator.dart';
@@ -55,9 +56,26 @@ class ClientDashboardPage extends StatelessWidget {
           ),
           PopupMenuButton<String>(
             onSelected: (value) {
-              _handleLogout(value, context, authController);
+              if (value == 'attendance_report') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => AttendanceScreen()),
+                );
+              } else {
+                _handleLogout(value, context, authController);
+              }
             },
             itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'attendance_report',
+                child: Row(
+                  children: [
+                    Icon(Icons.assignment, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Text('Attendance Report'),
+                  ],
+                ),
+              ),
               const PopupMenuItem(
                 value: 'logout',
                 child: Row(
@@ -90,10 +108,6 @@ class ClientDashboardPage extends StatelessWidget {
           return const Center(
             child: CircularProgressIndicator(),
           );
-        }
-
-        if (controller.errorMessage.value.isNotEmpty) {
-          return _buildErrorView(controller);
         }
 
         return RefreshIndicator(
@@ -416,7 +430,6 @@ class ClientDashboardPage extends StatelessWidget {
                 color: Colors.blue,
                 onTap: () {
                   // Export functionality
-                  
                 },
               ),
               _buildActionButton(
@@ -888,71 +901,6 @@ class ClientDashboardPage extends StatelessWidget {
   //     ),
   //   );
   // }
-
-  Widget _buildErrorView(ClientDashboardController controller) {
-    return Center(
-      child: Container(
-        margin: const EdgeInsets.all(20),
-        padding: const EdgeInsets.all(40),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red.shade400,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Oops! Something went wrong',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.red.shade600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              controller.errorMessage.value,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: controller.refreshEmployees,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Try Again'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue.shade600,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   void _showEmployeeDetails(BuildContext context, Employee employee) {
     showDialog(

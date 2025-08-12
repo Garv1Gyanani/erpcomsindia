@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 
+// --- Data Models (No changes needed here) ---
 class Designation {
   final int id;
   final String name;
@@ -47,6 +48,7 @@ class LocationData {
   factory LocationData.fromJson(Map<String, dynamic> json) =>
       LocationData(id: json['id'] ?? 0, name: json['location_name'] ?? '');
 }
+// --- End of Data Models ---
 
 class EmployeeEditPage extends StatefulWidget {
   final int userId;
@@ -91,6 +93,11 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
       _witness1NameController,
       _witness2NameController,
       _remarksController;
+
+  late TextEditingController _countryOriginController,
+      _passportNumberController,
+      _passportValidFromController,
+      _passportValidToController;
 
   String? _gender,
       _maritalStatus,
@@ -158,8 +165,6 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
     _loadDepartments();
     _loadSites();
     _loadLocations();
-    _addEpfNominee(); // Ensure one EPF nominee is always present
-    _addEpsNominee(); // Ensure one EPS nominee is added
   }
 
   void _initializeEmptyControllers() {
@@ -194,12 +199,15 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
     _permanentPincodeController = TextEditingController();
     _permanentPostOfficeController = TextEditingController();
     _permanentThanaController = TextEditingController();
+    _countryOriginController = TextEditingController();
+    _passportNumberController = TextEditingController();
+    _passportValidFromController = TextEditingController();
+    _passportValidToController = TextEditingController();
   }
 
   Future<void> fetchEmployeeDetails(int userId) async {
     final authData = await _storageService.getAllAuthData();
     final String? authToken = authData['token'];
-
     final url = Uri.parse('https://erp.comsindia.in/api/employee/$userId');
 
     try {
@@ -221,21 +229,28 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
           });
         } else {
           print('API returned success=false or missing data');
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(jsonData['message'] ?? 'Failed to load data.'),
-              backgroundColor: Colors.red));
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text(jsonData['message'] ?? 'Failed to load data.'),
+                backgroundColor: Colors.red));
+          }
         }
       } else {
         print('Request failed with status: ${response.statusCode}');
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(
-                'Failed to load employee details. Status: ${response.statusCode}'),
-            backgroundColor: Colors.red));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(
+                  'Failed to load employee details. Status: ${response.statusCode}'),
+              backgroundColor: Colors.red));
+        }
       }
     } catch (e) {
       print('Error fetching employee: $e');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('An error occurred: $e'), backgroundColor: Colors.red));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('An error occurred: $e'),
+            backgroundColor: Colors.red));
+      }
     }
   }
 
@@ -268,6 +283,11 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
     _witness2NameController.text = data['witness_2_name'] ?? '';
     _remarksController.text = data['remarks'] ?? '';
 
+    _countryOriginController.text = data['country_origin'] ?? '';
+    _passportNumberController.text = data['passport_number'] ?? '';
+    _passportValidFromController.text = data['passport_valid_from'] ?? '';
+    _passportValidToController.text = data['passport_valid_to'] ?? '';
+
     _gender = data['gender'];
     _maritalStatus = data['marital_status'];
     _bloodgroup = data['blood_group'];
@@ -291,13 +311,23 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
     _initializeEducationList();
     _initializeEpfNominees();
     _initializeEpsNominees();
+
+    if (_familyMembers.isEmpty) {
+      _addFamilyMember(fromInit: true);
+    }
+
+    if (_epfNominees.isEmpty) {
+      _addEpfNominee(fromInit: true);
+    }
+    if (_epsNominees.isEmpty) {
+      _addEpsNominee(fromInit: true);
+    }
   }
 
   void _initializeAddressControllers() {
     final data = _employeeData;
     List<dynamic> presentAddr = [];
     List<dynamic> permanentAddr = [];
-
     try {
       final pAddrData = data['present_address'];
       if (pAddrData != null) {
@@ -500,6 +530,22 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
           backgroundColor: Colors.orange));
       return;
     }
+
+    final validFamilyMembers = _familyMembers
+        .where((m) =>
+            m['name']!.text.trim().isNotEmpty &&
+            m['relation']!.text.trim().isNotEmpty)
+        .toList();
+
+    if (validFamilyMembers.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text(
+            'Please add at least one family member with a name and relation.'),
+        backgroundColor: Colors.orange,
+      ));
+      return;
+    }
+
     setState(() => _isLoading = true);
     final token = await _storageService.getToken();
     if (token == null) {
@@ -522,35 +568,17 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
       MapEntry('blood_group', _bloodgroup ?? ""),
       MapEntry('religion', _employeeRelegion ?? ""),
       MapEntry('remarks', _remarksController.text),
-    ]);
-
-    for (int i = 0; i < _familyMembers.length; i++) {
-      formData.fields.addAll([
-        MapEntry('FamilyMembName[$i]', _familyMembers[i]['name']!.text),
-        MapEntry('relation[$i]', _familyMembers[i]['relation']!.text),
-        MapEntry('occupation[$i]', _familyMembers[i]['occupation']!.text),
-        MapEntry('dob[$i]', _familyMembers[i]['dob']!.text),
-      ]);
-    }
-
-    formData.fields.addAll([
       MapEntry('department_id', _selectedDepartmentId?.toString() ?? ""),
       MapEntry('designation_id', _selectedDesignationId?.toString() ?? ""),
       MapEntry('site_id[0]', _selectedSiteId?.toString() ?? ""),
       MapEntry('location', _selectedLocationId?.toString() ?? ""),
       MapEntry('joining_mode', _joiningMode ?? ""),
       MapEntry('punching_code', _punchingCodeController.text),
-    ]);
-
-    formData.fields.addAll([
       MapEntry('phone', _phoneController.text),
       MapEntry('email', _emailController.text),
       MapEntry('emergency_contact', _emergencyContactController.text),
       MapEntry('contactPersionName', _emergencyPersonController.text),
       MapEntry('emergency_contact_relation', _emergencyRelationController.text),
-    ]);
-
-    formData.fields.addAll([
       MapEntry('present_address[0][street]', _presentStreetController.text),
       MapEntry('present_address[0][city]', _presentCityController.text),
       MapEntry('present_address[0][district]', _presentDistrictController.text),
@@ -567,7 +595,45 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
       MapEntry('permanent_address[0][thana]', _permanentThanaController.text),
       MapEntry(
           'permanent_address[0][pincode]', _permanentPincodeController.text),
+      MapEntry('aadhar', _aadharController.text),
+      MapEntry('pan', _panController.text),
+      MapEntry('bank_name', _bankNameController.text),
+      MapEntry('bank_account', _bankAccountController.text),
+      MapEntry('ifsc_code', _ifscCodeController.text),
+      MapEntry('witness_1_name', _witness1NameController.text),
+      MapEntry('witness_2_name', _witness2NameController.text),
+      MapEntry('pf_member', _pfMemberStatus ?? "no"),
+      MapEntry('pension_member', _pensionMemberStatus ?? "no"),
+      MapEntry('uan_number', _uanNumberController.text),
+      MapEntry('previous_pf_number', _previousPfNumberController.text),
     ]);
+
+    // *** FIX: Loop through family members and add BOTH formats the API expects ***
+    for (int i = 0; i < _familyMembers.length; i++) {
+      final member = _familyMembers[i];
+      if (member['name']!.text.trim().isEmpty &&
+          member['relation']!.text.trim().isEmpty) {
+        continue;
+      }
+
+      // Format 1: For the main employee profile
+      formData.fields.addAll([
+        MapEntry('FamilyMembName[$i]', member['name']!.text),
+        MapEntry('relation[$i]', member['relation']!.text),
+        MapEntry('occupation[$i]', member['occupation']!.text),
+        MapEntry('dob[$i]', member['dob']!.text),
+      ]);
+
+      // Format 2: For insurance/other forms (this fixes the error)
+      formData.fields.addAll([
+        MapEntry('family[$i][name]', member['name']!.text),
+        MapEntry('family[$i][dob]', member['dob']!.text),
+        MapEntry('family[$i][relation]', member['relation']!.text),
+        // Send default/empty values for fields not in the UI, but expected by backend
+        MapEntry('family[$i][residing]', 'Yes'),
+        MapEntry('family[$i][residence]', 'With Parents'),
+      ]);
+    }
 
     for (int i = 0; i < _educationList.length; i++) {
       formData.fields.addAll([
@@ -584,23 +650,6 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
       ]);
     }
 
-    formData.fields.addAll([
-      MapEntry('aadhar', _aadharController.text),
-      MapEntry('pan', _panController.text),
-      MapEntry('bank_name', _bankNameController.text),
-      MapEntry('bank_account', _bankAccountController.text),
-      MapEntry('ifsc_code', _ifscCodeController.text),
-    ]);
-
-    formData.fields.addAll([
-      MapEntry('witness_1_name', _witness1NameController.text),
-      MapEntry('witness_2_name', _witness2NameController.text),
-      MapEntry('pf_member', _pfMemberStatus ?? "no"),
-      MapEntry('pension_member', _pensionMemberStatus ?? "no"),
-      MapEntry('uan_number', _uanNumberController.text),
-      MapEntry('previous_pf_number', _previousPfNumberController.text),
-      MapEntry('international_worker', _internationalWorkerStatus ?? "no"),
-    ]);
     String emptyIfNull(TextEditingController? controller) {
       if (controller == null) return '';
       final text = controller.text.trim();
@@ -609,7 +658,6 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
 
     for (int i = 0; i < _epfNominees.length; i++) {
       final nominee = _epfNominees[i];
-
       formData.fields.addAll([
         MapEntry('epf[$i][name]', emptyIfNull(nominee['name'])),
         MapEntry('epf[$i][address]', emptyIfNull(nominee['address'])),
@@ -621,30 +669,39 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
     }
 
     for (int i = 0; i < _epsNominees.length; i++) {
-      final name = emptyIfNull(_epsNominees[i]['name']);
-      final age = emptyIfNull(_epsNominees[i]['age']);
-      final relationship = emptyIfNull(_epsNominees[i]['relationship']);
-
       formData.fields.addAll([
-        MapEntry('eps[$i][name]', name),
-        MapEntry('eps[$i][age]', age),
-        MapEntry('eps[$i][relationship]', relationship),
+        MapEntry('eps[$i][name]', emptyIfNull(_epsNominees[i]['name'])),
+        MapEntry('eps[$i][age]', emptyIfNull(_epsNominees[i]['age'])),
+        MapEntry('eps[$i][relationship]',
+            emptyIfNull(_epsNominees[i]['relationship'])),
+      ]);
+    }
+
+    formData.fields.add(
+        MapEntry('international_worker', _internationalWorkerStatus ?? "no"));
+    if (_internationalWorkerStatus == 'yes') {
+      formData.fields.addAll([
+        MapEntry('country_origin', _countryOriginController.text),
+        MapEntry('passport_number', _passportNumberController.text),
+        MapEntry('passport_valid_from', _passportValidFromController.text),
+        MapEntry('passport_valid_to', _passportValidToController.text),
+      ]);
+    } else {
+      formData.fields.addAll([
+        const MapEntry('country_origin', ''),
+        const MapEntry('passport_number', ''),
+        const MapEntry('passport_valid_from', ''),
+        const MapEntry('passport_valid_to', ''),
       ]);
     }
 
     formData.fields.addAll([
-      MapEntry('insurance_no', ''),
-      MapEntry('branch_office', ''),
-      MapEntry('dispensary', ''),
-      MapEntry('family', ''),
-      MapEntry('exit_date', ''),
-      MapEntry('scheme_certificate', ''),
-      MapEntry('ppo', ''),
-      MapEntry('country_origin', ''),
-      MapEntry('passport_number', ''),
-      MapEntry('passport_valid_from', ''),
-      MapEntry('passport_valid_to', ''),
-      MapEntry('previous_employment', ''),
+      const MapEntry('insurance_no', ''),
+      const MapEntry('branch_office', ''),
+      const MapEntry('dispensary', ''),
+      const MapEntry('exit_date', ''),
+      const MapEntry('scheme_certificate', ''),
+      const MapEntry('ppo', ''),
     ]);
 
     if (_employeeImageFile != null) {
@@ -667,7 +724,7 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
     }
     if (_panFile != null) {
       formData.files.add(MapEntry(
-        'pan_file',
+        'pan_image',
         await MultipartFile.fromFile(_panFile!.path),
       ));
     }
@@ -706,15 +763,19 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
             'Authorization': 'Bearer $token'
           }));
       if (response.statusCode == 200 && response.data['status'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Employee updated successfully!'),
-            backgroundColor: Colors.green));
-        Navigator.of(context).pop(true);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('Employee updated successfully!'),
+              backgroundColor: Colors.green));
+          Navigator.of(context).pop(true);
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(response.data['message']?.toString() ??
-                'Failed to update employee.'),
-            backgroundColor: Colors.red));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(response.data['message']?.toString() ??
+                  'Failed to update employee.'),
+              backgroundColor: Colors.red));
+        }
       }
     } on DioException catch (e) {
       String errorMessage = 'An unknown error occurred.';
@@ -722,26 +783,38 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
         print("DioError Response Data: ${e.response?.data}");
         final responseData = e.response?.data;
         if (responseData is Map && responseData.containsKey('message')) {
-          errorMessage = responseData['message'];
-          if (responseData.containsKey('errors')) {
-            final errors = responseData['errors'] as Map;
-            errorMessage +=
-                '\n${errors.entries.map((me) => '${me.key}: ${me.value.join(', ')}').join('\n')}';
+          final message = responseData['message'];
+          if (message is String) {
+            errorMessage = message;
+          } else if (message is Map) {
+            errorMessage = message.entries
+                .map((entry) => (entry.value as List).join(' '))
+                .join('\n');
+          } else {
+            errorMessage = "An unexpected error format was received.";
           }
         } else {
-          errorMessage = (e.response?.data.toString() ?? e.message)!;
+          errorMessage = e.response?.data.toString() ??
+              e.message ??
+              "Network request failed.";
         }
       } else {
         errorMessage = e.message ?? "Network request failed.";
       }
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(errorMessage, maxLines: 10),
-          backgroundColor: Colors.red));
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 7),
+        ));
+      }
     } catch (e) {
       print("Generic Error: $e");
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('A critical error occurred: $e'),
-          backgroundColor: Colors.red));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('A critical error occurred: $e'),
+            backgroundColor: Colors.red));
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -803,6 +876,17 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
                         _internationalWorkerStatus,
                         ['yes', 'no'],
                         (v) => setState(() => _internationalWorkerStatus = v)),
+                    if (_internationalWorkerStatus == 'yes') ...[
+                      const SizedBox(height: 8),
+                      _buildTextField(
+                          _countryOriginController, 'Country of Origin'),
+                      _buildTextField(
+                          _passportNumberController, 'Passport Number'),
+                      _buildDateField(
+                          _passportValidFromController, 'Passport Valid From'),
+                      _buildDateField(
+                          _passportValidToController, 'Passport Valid To'),
+                    ],
                     _buildSectionHeader('Contact & Address'),
                     _buildTextField(_phoneController, 'Phone',
                         keyboardType: TextInputType.phone),
@@ -839,7 +923,8 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
                     _buildTextField(
                         _bankAccountController, 'Bank Account Number'),
                     _buildTextField(_ifscCodeController, 'IFSC Code'),
-                    _buildSectionHeader('Family Members'),
+                    _buildSectionHeader(
+                        'Family Members (At least one required)'),
                     ..._buildFamilyMemberFields(),
                     Align(
                         alignment: Alignment.centerRight,
@@ -924,6 +1009,7 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
         controller: c,
         keyboardType: keyboardType,
         maxLines: isMultiLine ? null : 1,
+        validator: validator,
         decoration: InputDecoration(
             labelText: l,
             border: const OutlineInputBorder(),
@@ -936,23 +1022,24 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
-          controller: c,
-          decoration: InputDecoration(
-              labelText: l,
-              border: const OutlineInputBorder(),
-              suffixIcon: const Icon(Icons.calendar_today)),
-          readOnly: true,
-          onTap: () async {
-            DateTime? d = await showDatePicker(
-                context: context,
-                initialDate: DateTime.tryParse(c.text) ?? DateTime.now(),
-                firstDate: DateTime(1950),
-                lastDate: DateTime.now().add(const Duration(days: 365)));
-            if (d != null) {
-              c.text =
-                  "${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}";
-            }
-          }),
+        controller: c,
+        decoration: InputDecoration(
+            labelText: l,
+            border: const OutlineInputBorder(),
+            suffixIcon: const Icon(Icons.calendar_today)),
+        readOnly: true,
+        onTap: () async {
+          DateTime? d = await showDatePicker(
+              context: context,
+              initialDate: DateTime.tryParse(c.text) ?? DateTime.now(),
+              firstDate: DateTime(1950),
+              lastDate: DateTime.now().add(const Duration(days: 365)));
+          if (d != null) {
+            c.text =
+                "${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}";
+          }
+        },
+      ),
     );
   }
 
@@ -961,7 +1048,6 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
     final uniqueItems = items.toSet().toList();
     final validValue =
         uniqueItems.contains(selectedValue) ? selectedValue : null;
-
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<String>(
@@ -986,7 +1072,7 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: DropdownButtonFormField<int>(
-          value: _selectedLocationId ?? 0,
+          value: _selectedLocationId,
           isExpanded: true,
           decoration: InputDecoration(
               labelText: 'Location',
@@ -1071,20 +1157,9 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
         .map((Designation d) =>
             DropdownMenuItem<int>(value: d.id, child: Text(d.name)))
         .toList();
-
-    // Add a default "Select designation" item
-    designationItems.insert(
-      0,
-      const DropdownMenuItem<int>(
-        value: 0,
-        child: Text('Select designation'),
-      ),
-    );
-
-    // Ensure selected value is valid
     final isValidValue =
         _designations.any((d) => d.id == _selectedDesignationId);
-    final dropdownValue = isValidValue ? _selectedDesignationId : 0;
+    final dropdownValue = isValidValue ? _selectedDesignationId : null;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -1101,8 +1176,7 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
             ? null
             : (int? v) => setState(() => _selectedDesignationId = v),
         items: designationItems,
-        validator: (v) =>
-            (v == null || v == 0) ? 'Please select a Designation' : null,
+        validator: (v) => (v == null) ? 'Please select a Designation' : null,
       ),
     );
   }
@@ -1120,31 +1194,54 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
                     children: [
                       Text('Member ${i + 1}',
                           style: const TextStyle(fontWeight: FontWeight.bold)),
-                      IconButton(
-                          icon: const Icon(Icons.delete_outline,
-                              color: Colors.red),
-                          onPressed: () => _removeFamilyMember(i))
+                      if (_familyMembers.length > 1)
+                        IconButton(
+                            icon: const Icon(Icons.delete_outline,
+                                color: Colors.red),
+                            onPressed: () => _removeFamilyMember(i))
                     ]),
-                _buildTextField(_familyMembers[i]['name']!, 'Name'),
-                _buildTextField(_familyMembers[i]['relation']!, 'Relation'),
+                _buildTextField(_familyMembers[i]['name']!, 'Name *',
+                    validator: (value) {
+                  final relation = _familyMembers[i]['relation']!.text.trim();
+                  if (relation.isNotEmpty &&
+                      (value == null || value.trim().isEmpty)) {
+                    return 'Name is required if relation is filled.';
+                  }
+                  return null;
+                }),
+                _buildTextField(_familyMembers[i]['relation']!, 'Relation *',
+                    validator: (value) {
+                  final name = _familyMembers[i]['name']!.text.trim();
+                  if (name.isNotEmpty &&
+                      (value == null || value.trim().isEmpty)) {
+                    return 'Relation is required if name is filled.';
+                  }
+                  return null;
+                }),
                 _buildTextField(_familyMembers[i]['occupation']!, 'Occupation'),
                 _buildDateField(_familyMembers[i]['dob']!, 'Date of Birth')
               ]))),
     );
   }
 
-  void _addFamilyMember() {
-    setState(() {
-      _familyMembers.add({
-        'name': TextEditingController(),
-        'relation': TextEditingController(),
-        'occupation': TextEditingController(),
-        'dob': TextEditingController()
+  void _addFamilyMember({bool fromInit = false}) {
+    final newMember = {
+      'name': TextEditingController(),
+      'relation': TextEditingController(),
+      'occupation': TextEditingController(),
+      'dob': TextEditingController()
+    };
+    if (fromInit) {
+      _familyMembers.add(newMember);
+    } else {
+      setState(() {
+        _familyMembers.add(newMember);
       });
-    });
+    }
   }
 
   void _removeFamilyMember(int i) {
+    if (_familyMembers.length <= 1) return;
     _familyMembers[i].forEach((k, c) => c.dispose());
     setState(() => _familyMembers.removeAt(i));
   }
@@ -1275,17 +1372,20 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
     );
   }
 
-  void _addEpfNominee() {
-    if (_epfNominees.isEmpty) {
+  void _addEpfNominee({bool fromInit = false}) {
+    final newNominee = {
+      'name': TextEditingController(),
+      'address': TextEditingController(),
+      'relationship': TextEditingController(),
+      'dob': TextEditingController(),
+      'share': TextEditingController(),
+      'guardian': TextEditingController()
+    };
+    if (fromInit) {
+      _epfNominees.add(newNominee);
+    } else {
       setState(() {
-        _epfNominees.add({
-          'name': TextEditingController(),
-          'address': TextEditingController(),
-          'relationship': TextEditingController(),
-          'dob': TextEditingController(),
-          'share': TextEditingController(),
-          'guardian': TextEditingController()
-        });
+        _epfNominees.add(newNominee);
       });
     }
   }
@@ -1322,14 +1422,17 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
     );
   }
 
-  void _addEpsNominee() {
-    if (_epsNominees.isEmpty) {
+  void _addEpsNominee({bool fromInit = false}) {
+    final newNominee = {
+      'name': TextEditingController(text: ''),
+      'age': TextEditingController(text: ''),
+      'relationship': TextEditingController(text: ''),
+    };
+    if (fromInit) {
+      _epsNominees.add(newNominee);
+    } else {
       setState(() {
-        _epsNominees.add({
-          'name': TextEditingController(text: ''),
-          'age': TextEditingController(text: ''),
-          'relationship': TextEditingController(text: ''),
-        });
+        _epsNominees.add(newNominee);
       });
     }
   }
@@ -1405,6 +1508,10 @@ class _EmployeeEditPageState extends State<EmployeeEditPage> {
     _permanentPincodeController.dispose();
     _permanentPostOfficeController.dispose();
     _permanentThanaController.dispose();
+    _countryOriginController.dispose();
+    _passportNumberController.dispose();
+    _passportValidFromController.dispose();
+    _passportValidToController.dispose();
     for (var m in _familyMembers) {
       m.forEach((k, c) => c.dispose());
     }
