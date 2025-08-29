@@ -1,5 +1,6 @@
 import 'package:coms_india/client/deshboard.dart';
 import 'package:coms_india/client/navbar/clientnav.dart';
+import 'package:coms_india/features/attendance/models/self_attendance.dart';
 import 'package:coms_india/features/employee/views/add_contact.dart';
 import 'package:coms_india/features/employee/views/education_details.dart';
 import 'package:coms_india/features/employee/views/employee_details.dart';
@@ -263,6 +264,14 @@ class AppRouter {
         ),
       ),
       GoRoute(
+        path: '/selfatt',
+        name: 'selfatt',
+        builder: (context, state) => GlobalBottomNavigation(
+          currentRoute: state.uri.path,
+          child: SelfAttendancePage(),
+        ),
+      ),
+      GoRoute(
         path: '/shifts',
         name: 'shifts',
         builder: (context, state) => GlobalBottomNavigation(
@@ -363,6 +372,7 @@ class AppRouter {
           '/employees',
           '/weekend',
           '/weekendlist',
+          '/selfatt',
           '/shift-rotational',
         ];
 

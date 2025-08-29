@@ -53,6 +53,12 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
       icon: Icons.assignment_ind,
       color: Colors.orange,
     ),
+    MenuItemData(
+      id: 6,
+      title: 'Self Attendance',
+      icon: Icons.person_2,
+      color: Colors.orange,
+    ),
   ];
 
   @override
@@ -111,129 +117,120 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
   }
 
   Widget _buildDrawer() {
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(
-        topRight: Radius.circular(20),
-        bottomRight: Radius.circular(20),
-      ),
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.5,
-        child: Drawer(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: [
-              Obx(() {
-                print(
-                    'Building drawer header with user: ${_authController.currentUser.value}');
-                final user = _authController.currentUser.value;
-                final name = user?.name ?? 'User';
-                final email = user?.email ?? 'user@example.com';
-                final firstLetter =
-                    name.isNotEmpty ? name[0].toUpperCase() : 'U';
-
-                return DrawerHeader(
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text(
-                            firstLetter,
-                            style: TextStyle(
-                              color: Theme.of(context).primaryColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        email,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.white70,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (user?.roles.isNotEmpty == true)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4.0),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              user!.roles.first.name,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                );
-              }),
-              _buildDrawerItem(Icons.person_add, 'Employee', onNavigate: () {
-                context.goNamed('employees');
-              }),
-              _buildDrawerItem(Icons.people, 'Team', onNavigate: () {
-                context.go('/team');
-              }),
-              _buildDrawerItem(Icons.assignment, 'Tasks', onNavigate: () {
-                context.go('/tasks');
-              }),
-              _buildDrawerItem(Icons.notification_important, 'Alerts',
-                  onNavigate: () {
-                context.go('/alerts');
-              }),
-              _buildDrawerItem(Icons.confirmation_number, 'Tickets',
-                  onNavigate: () {
-                context.go('/tickets');
-              }),
-              _buildDrawerItem(Icons.history, 'History'),
-              const Divider(),
-              _buildDrawerItem(Icons.settings, 'Settings'),
-              _buildDrawerItem(Icons.help_outline, 'Help'),
-              Obx(() {
-                return _buildDrawerItem(
-                  Icons.exit_to_app,
-                  'Logout',
-                  isLoading: _authController.isLoading.value,
-                );
-              }),
-            ],
-          ),
+    return SizedBox(
+      // Wrap Drawer with SizedBox
+      width: MediaQuery.of(context).size.width *
+          0.7, // Adjust width as needed (70% of screen)
+      child: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            _buildDrawerHeader(),
+            _buildDrawerMenuItems(context),
+            const Divider(height: 30, thickness: 1),
+            _buildDrawerSettingsAndHelp(context),
+            const Divider(height: 30, thickness: 1),
+            _buildDrawerLogoutButton(context),
+          ],
         ),
       ),
     );
   }
 
-// Updated drawer item with navigation to tasks
+  Widget _buildDrawerHeader() {
+    return Obx(() {
+      final user = _authController.currentUser.value;
+      final name = user?.name ?? 'User';
+      final email = user?.email ?? 'user@example.com';
+      final firstLetter = name.isNotEmpty ? name[0].toUpperCase() : 'U';
+
+      return DrawerHeader(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppColors.primary, AppColors.primary.withOpacity(0.85)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              radius: 35,
+              backgroundColor: Colors.white,
+              child: Text(
+                firstLetter,
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 24,
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              name,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              email,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12, color: Colors.white70),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildDrawerMenuItems(BuildContext context) {
+    return Column(
+      children: [
+        _buildDrawerItem(Icons.person_add, 'Employee', onNavigate: () {
+          context.goNamed('employees');
+        }),
+        _buildDrawerItem(Icons.people, 'Team', onNavigate: () {
+          context.go('/team');
+        }),
+        _buildDrawerItem(Icons.assignment, 'Tasks', onNavigate: () {
+          context.go('/tasks');
+        }),
+        _buildDrawerItem(Icons.notifications, 'Alerts', onNavigate: () {
+          context.go('/alerts');
+        }),
+        _buildDrawerItem(Icons.confirmation_number, 'Tickets', onNavigate: () {
+          context.go('/tickets');
+        }),
+        _buildDrawerItem(Icons.history, 'History'),
+      ],
+    );
+  }
+
+  Widget _buildDrawerSettingsAndHelp(BuildContext context) {
+    return Column(
+      children: [
+        _buildDrawerItem(Icons.settings, 'Settings'),
+        _buildDrawerItem(Icons.help_outline, 'Help'),
+      ],
+    );
+  }
+
+  Widget _buildDrawerLogoutButton(BuildContext context) {
+    return Obx(() {
+      return _buildDrawerItem(
+        Icons.exit_to_app,
+        'Logout',
+        isLoading: _authController.isLoading.value,
+      );
+    });
+  }
+
   Widget _buildDrawerItem(IconData icon, String title,
       {bool isLogout = false, Function()? onNavigate, bool isLoading = false}) {
     return ListTile(
@@ -542,6 +539,8 @@ class _SupervisorHomePageState extends State<SupervisorHomePage> {
           context.goNamed('site-shifts');
         } else if (item.title == 'weekendlist') {
           context.goNamed('weekendlist');
+        } else if (item.title == 'Self Attendance') {
+          context.goNamed('selfatt');
         }
         // Add other menu item navigations here if needed
       },

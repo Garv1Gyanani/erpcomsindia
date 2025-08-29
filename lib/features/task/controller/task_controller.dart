@@ -8,23 +8,19 @@ import 'package:coms_india/core/di/service_locator.dart';
 class TaskStatusController extends GetxController {
   final ApiService _apiService = getIt<ApiService>();
   final StorageService _storageService = getIt<StorageService>();
-  // Observable variables
   final _taskStatus = Rxn<TaskStatusModel>();
   final _isLoading = false.obs;
   final _errorMessage = ''.obs;
   final _currentUserId = ''.obs;
 
-  // Getters
   TaskStatusModel? get taskStatus => _taskStatus.value;
   bool get isLoading => _isLoading.value;
   String get errorMessage => _errorMessage.value;
   String get currentUserId => _currentUserId.value;
 
-  // Observable getters for UI binding
   RxBool get hasError => (_errorMessage.value.isNotEmpty).obs;
   RxBool get hasData => (_taskStatus.value != null).obs;
 
-  // Progress calculations
   double get progressPercentage => taskStatus?.progressPercentage ?? 0.0;
   bool get isAllCompleted => taskStatus?.isAllCompleted ?? false;
 
@@ -34,12 +30,10 @@ class TaskStatusController extends GetxController {
     fetchTaskStatus();
   }
 
-  // Set current user ID
   void setUserId(String userId) {
     _currentUserId.value = userId;
   }
 
-  // Fetch task status for specific user
   Future<void> fetchTaskStatus() async {
     try {
       _isLoading.value = true;
@@ -80,19 +74,16 @@ class TaskStatusController extends GetxController {
     }
   }
 
-  // Refresh task status
   Future<void> refreshTaskStatus() async {
     if (_currentUserId.value.isNotEmpty) {
       await fetchTaskStatus();
     }
   }
 
-  // Clear error message
   void clearError() {
     _errorMessage.value = '';
   }
 
-  // Reset all data
   void reset() {
     _taskStatus.value = null;
     _isLoading.value = false;

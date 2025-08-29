@@ -237,8 +237,8 @@ class _AssignEmployeePageState extends State<AssignEmployeePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Assign Shift',
-            style: TextStyle(color: Colors.white)),
+        title:
+            const Text('Assign Shift', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.red,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -298,7 +298,8 @@ class _AssignEmployeePageState extends State<AssignEmployeePage> {
                     items: _shiftsForSite!.map((shift) {
                       return DropdownMenuItem<String>(
                         value: shift['shift_id'].toString(),
-                        child: Text(shift['shift_name']),
+                        child: Text(
+                            '${shift['shift_name']} (${shift['start_time'].substring(0, 5)} - ${shift['end_time'].substring(0, 5)})'), // Display shift name and time
                       );
                     }).toList(),
                     onChanged: (String? newValue) {

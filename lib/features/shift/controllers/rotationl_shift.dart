@@ -752,7 +752,7 @@ class _RotationalShiftPageState extends State<RotationalShiftPage> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          shift.shiftName,
+                          '${shift.shiftName} (${formatTime(shift.startTime)} - ${formatTime(shift.endTime)})', // Display shift name and time
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
                             color: isAllAssigned
@@ -974,7 +974,7 @@ class _RotationalShiftPageState extends State<RotationalShiftPage> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          shift.shiftName,
+                          '${shift.shiftName} (${formatTime(shift.startTime)} - ${formatTime(shift.endTime)})', // Display shift name and time
                           style: TextStyle(
                             color: isAssigned
                                 ? Colors.blue[800]

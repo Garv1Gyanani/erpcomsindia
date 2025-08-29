@@ -36,15 +36,21 @@ class Site {
 class Shift {
   final int shiftId;
   final String shiftName;
+  final String startTime; // Add this
+  final String endTime; // Add this
 
   Shift({
     required this.shiftId,
     required this.shiftName,
+    required this.startTime, // Add this
+    required this.endTime, // Add this
   });
 
   factory Shift.fromJson(Map<String, dynamic> json) => Shift(
         shiftId: json["shift_id"],
         shiftName: json["shift_name"],
+        startTime: json["start_time"] ?? '', // Add this and handle nulls
+        endTime: json["end_time"] ?? '', // Add this and handle nulls
       );
 
   @override

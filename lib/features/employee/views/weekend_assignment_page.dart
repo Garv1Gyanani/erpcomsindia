@@ -70,6 +70,7 @@ class _WeekendAssignmentPageState extends State<WeekendAssignmentPage> {
       if (_authToken == null || _authToken!.isEmpty)
         throw Exception('Auth token not found.');
       final sites = await _apiService.fetchSitesAndShifts(_authToken!);
+      print('these are sites ->> $sites');
       setState(() => _sites = sites);
     } catch (e) {
       setState(() => _errorMessage = e.toString());
@@ -117,11 +118,33 @@ class _WeekendAssignmentPageState extends State<WeekendAssignmentPage> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Assignments submitted successfully!'),
           backgroundColor: Colors.white));
+      context.go(
+          '/site-shifts'); // Navigate back to the shift list page after successful submission
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Submission Failed: $e'), backgroundColor: Colors.red));
     } finally {
       setState(() => _isSubmitting = false);
+    }
+  }
+
+  String _formatTime(String time) {
+    try {
+      final parts = time.split(':');
+      final hour = int.parse(parts[0]);
+      final minute = parts[1];
+
+      if (hour == 0) {
+        return '12:$minute AM';
+      } else if (hour < 12) {
+        return '$hour:$minute AM';
+      } else if (hour == 12) {
+        return '12:$minute PM';
+      } else {
+        return '${hour - 12}:$minute PM';
+      }
+    } catch (e) {
+      return time;
     }
   }
 
@@ -183,7 +206,10 @@ class _WeekendAssignmentPageState extends State<WeekendAssignmentPage> {
             hint: const Text('Choose a shift'),
             items: _selectedSite?.shifts
                 .map((shift) => DropdownMenuItem(
-                    value: shift, child: Text(shift.shiftName)))
+                    value: shift,
+                    child: Text(
+                      '${shift.shiftName} (${_formatTime(shift.startTime)} - ${_formatTime(shift.endTime)})', // Display time
+                    )))
                 .toList(),
             onChanged: _selectedSite == null
                 ? null

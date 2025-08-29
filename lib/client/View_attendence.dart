@@ -2,11 +2,12 @@ import 'package:coms_india/core/services/storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:intl/intl.dart'; // Import for date formatting
+import 'package:intl/intl.dart';
+import 'package:table_calendar/table_calendar.dart'; // <-- IMPORT THE NEW PACKAGE
 
 // --- DATA MODELS ---
+// (Your data models remain unchanged)
 
-// Model for the initial Shift dropdown
 class Shift {
   final int id;
   final String name;
@@ -21,7 +22,6 @@ class Shift {
   }
 }
 
-// Model for the User nested in the attendance record
 class User {
   final int id;
   final String name;
@@ -33,7 +33,6 @@ class User {
   }
 }
 
-// Model for a single Attendance Record
 class AttendanceRecord {
   final int id;
   final DateTime? punchIn;
@@ -52,14 +51,13 @@ class AttendanceRecord {
   });
 
   factory AttendanceRecord.fromJson(Map<String, dynamic> json) {
-    // Helper function to safely parse dates that might be null
     DateTime? parseDate(String? dateString) {
       if (dateString == null) return null;
       try {
         return DateTime.parse(dateString);
       } catch (e) {
         print("Error parsing date: $dateString - $e");
-        return null; // Handle parsing errors gracefully
+        return null;
       }
     }
 
@@ -75,6 +73,7 @@ class AttendanceRecord {
 }
 
 // --- MAIN WIDGET ---
+// (Your ViewAttendence widget remains unchanged)
 
 class ViewAttendence extends StatefulWidget {
   const ViewAttendence({Key? key}) : super(key: key);
@@ -163,7 +162,6 @@ class _ViewAttendenceState extends State<ViewAttendence> {
               .map((json) => AttendanceRecord.fromJson(json))
               .toList();
 
-          // Group records by user ID
           final Map<int, List<AttendanceRecord>> tempGrouped = {};
           for (var record in records) {
             (tempGrouped[record.user.id] ??= []).add(record);
@@ -331,9 +329,9 @@ class _ViewAttendenceState extends State<ViewAttendence> {
   }
 }
 
-// --- DETAIL SCREEN WIDGET ---
+// --- DETAIL SCREEN WIDGET (MODIFIED) ---
 
-class EmployeeAttendanceDetailScreen extends StatelessWidget {
+class EmployeeAttendanceDetailScreen extends StatefulWidget {
   final String employeeName;
   final List<AttendanceRecord> records;
 
@@ -342,6 +340,181 @@ class EmployeeAttendanceDetailScreen extends StatelessWidget {
     required this.employeeName,
     required this.records,
   }) : super(key: key);
+
+  @override
+  State<EmployeeAttendanceDetailScreen> createState() =>
+      _EmployeeAttendanceDetailScreenState();
+}
+
+class _EmployeeAttendanceDetailScreenState
+    extends State<EmployeeAttendanceDetailScreen> {
+  DateTime? _selectedDate;
+  List<AttendanceRecord> _filteredRecords = [];
+
+  // --- NEW STATE VARIABLES FOR THE CALENDAR ---
+  late Set<DateTime> _eventDates;
+  DateTime? _firstCalendarDay;
+  DateTime? _lastCalendarDay;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeData();
+  }
+
+  void _initializeData() {
+    // Sort records by date, newest first
+    widget.records.sort((a, b) {
+      final dateA = a.punchIn ?? a.punchOut;
+      final dateB = b.punchIn ?? b.punchOut;
+      if (dateA == null && dateB == null) return 0;
+      if (dateA == null) return 1;
+      if (dateB == null) return -1;
+      return dateB.compareTo(dateA);
+    });
+
+    // Get unique dates and set them up for the calendar's event loader
+    final uniqueDates = <DateTime>{};
+    for (var record in widget.records) {
+      final date = record.punchIn ?? record.punchOut;
+      if (date != null) {
+        // Normalize to date only (remove time part) for accurate matching
+        final normalizedDate = DateTime.utc(date.year, date.month, date.day);
+        uniqueDates.add(normalizedDate);
+      }
+    }
+
+    // Using a Set for efficient lookup in the eventLoader
+    _eventDates = uniqueDates;
+
+    if (_eventDates.isNotEmpty) {
+      // Set calendar boundaries
+      _firstCalendarDay = _eventDates.reduce((a, b) => a.isBefore(b) ? a : b);
+      _lastCalendarDay = _eventDates.reduce((a, b) => a.isAfter(b) ? a : b);
+
+      // Set default selected date to the latest available date
+      _selectedDate = _lastCalendarDay;
+      _filterRecordsByDate(_selectedDate!);
+    } else {
+      // Handle case with no records
+      _firstCalendarDay = DateTime.now().subtract(const Duration(days: 365));
+      _lastCalendarDay = DateTime.now();
+      _selectedDate = null;
+    }
+  }
+
+  void _filterRecordsByDate(DateTime selectedDate) {
+    setState(() {
+      _filteredRecords = widget.records.where((record) {
+        final recordDate = record.punchIn ?? record.punchOut;
+        if (recordDate == null) return false;
+
+        // Compare year, month, and day only
+        return recordDate.year == selectedDate.year &&
+            recordDate.month == selectedDate.month &&
+            recordDate.day == selectedDate.day;
+      }).toList();
+
+      // Sort filtered records by punch in time
+      _filteredRecords.sort((a, b) {
+        final timeA = a.punchIn ?? a.punchOut;
+        final timeB = b.punchIn ?? b.punchOut;
+        if (timeA == null && timeB == null) return 0;
+        if (timeA == null) return 1;
+        if (timeB == null) return -1;
+        return timeA.compareTo(timeB);
+      });
+    });
+  }
+
+  // --- REPLACED: THIS NOW SHOWS A REAL CALENDAR ---
+  Future<void> _showCalendarPicker() async {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        // Use StatefulBuilder to manage the calendar's state within the modal
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              padding: const EdgeInsets.all(16.0),
+              height: MediaQuery.of(context).size.height * 0.65,
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Select Date',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                  const Divider(),
+                  TableCalendar(
+                    firstDay: _firstCalendarDay ?? DateTime.utc(2020),
+                    lastDay: _lastCalendarDay ?? DateTime.now(),
+                    focusedDay: _selectedDate ?? DateTime.now(),
+                    calendarFormat: CalendarFormat.month,
+                    selectedDayPredicate: (day) =>
+                        isSameDay(_selectedDate, day),
+                    onDaySelected: (selectedDay, focusedDay) {
+                      // Only allow selection of dates that have records
+                      if (_eventDates.contains(DateTime.utc(selectedDay.year,
+                          selectedDay.month, selectedDay.day))) {
+                        setModalState(() {
+                          _selectedDate = selectedDay;
+                        });
+                        _filterRecordsByDate(selectedDay);
+                        Navigator.pop(context); // Close modal on selection
+                      }
+                    },
+                    // --- THIS IS THE KEY PART FOR MARKING DATES ---
+                    eventLoader: (day) {
+                      // Normalize the date to match the Set
+                      final normalizedDay =
+                          DateTime.utc(day.year, day.month, day.day);
+                      if (_eventDates.contains(normalizedDay)) {
+                        return [
+                          'event'
+                        ]; // Return a non-empty list to show a marker
+                      }
+                      return []; // Return an empty list for no marker
+                    },
+                    // --- STYLING TO MATCH YOUR APP'S THEME ---
+                    calendarStyle: CalendarStyle(
+                      todayDecoration: BoxDecoration(
+                        color: Colors.red.shade200,
+                        shape: BoxShape.circle,
+                      ),
+                      selectedDecoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      markerDecoration: BoxDecoration(
+                        color: Colors.red.shade700,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    headerStyle: const HeaderStyle(
+                      titleCentered: true,
+                      formatButtonVisible: false,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   // Helper to format time, returns 'N/A' if date is null
   String _formatTime(DateTime? date) {
@@ -374,21 +547,113 @@ class EmployeeAttendanceDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(employeeName,
+        title: Text(widget.employeeName,
             style: const TextStyle(
                 color: Colors.white, fontWeight: FontWeight.bold)),
         iconTheme: const IconThemeData(color: Colors.white),
         backgroundColor: Colors.red,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.calendar_today, color: Colors.white),
+            onPressed:
+                _showCalendarPicker, // <-- UPDATED to call the new picker
+          ),
+        ],
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(8.0),
-        itemCount: records.length,
-        itemBuilder: (context, index) {
-          final record = records[index];
-          // Sort records by date, newest first, for better readability
-          records.sort((a, b) => b.punchIn!.compareTo(a.punchIn!));
-          return _buildAttendanceCard(record);
-        },
+      body: Column(
+        children: [
+          // Date Filter Header
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16.0),
+            color: Colors.grey.shade50,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Selected Date',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    Text(
+                      _selectedDate != null
+                          ? DateFormat('EEEE, MMM dd, yyyy')
+                              .format(_selectedDate!)
+                          : 'No date selected',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                // Column(
+                //   children: [
+                //     Text(
+                //       '${_filteredRecords.length} record(s)',
+                //       style: TextStyle(
+                //         color: Colors.grey.shade600,
+                //         fontWeight: FontWeight.w500,
+                //       ),
+                //     ),
+                //     const SizedBox(width: 8),
+                //     ElevatedButton.icon(
+                //       onPressed: _showCalendarPicker,
+                //       icon: const Icon(Icons.calendar_today, size: 16),
+                //       label: const Text('Change'),
+                //       style: ElevatedButton.styleFrom(
+                //         backgroundColor: Colors.red,
+                //         foregroundColor: Colors.white,
+                //         padding: const EdgeInsets.symmetric(
+                //             horizontal: 12, vertical: 8),
+                //       ),
+                //     ),
+                //   ],
+                // ),
+              ],
+            ),
+          ),
+          // Records List
+          Expanded(
+            child: _filteredRecords.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.event_busy,
+                          size: 64,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No attendance records found\nfor the selected date',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _showCalendarPicker,
+                          child: const Text('Select Different Date'),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(8.0),
+                    itemCount: _filteredRecords.length,
+                    itemBuilder: (context, index) {
+                      final record = _filteredRecords[index];
+                      return _buildAttendanceCard(record);
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }

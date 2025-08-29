@@ -12,6 +12,7 @@ class EducationalDetailsSection extends StatefulWidget {
 
 class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
   final List<EducationEntry> _educationEntries = [];
+  final _formKey = GlobalKey<FormState>(); // Add a form key
 
   @override
   void initState() {
@@ -70,6 +71,7 @@ class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
     double fieldWidth = 120,
     TextInputType keyboardType = TextInputType.text,
     bool isYearField = false,
+    String? Function(String?)? validator, // Add validator
   }) {
     return Container(
       width: fieldWidth == double.infinity ? null : fieldWidth,
@@ -112,8 +114,11 @@ class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
               hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade500),
               filled: true,
               fillColor: Colors.grey.shade50,
+              errorStyle: const TextStyle(
+                  fontSize: 12), // Add error style for better visibility
             ),
             style: const TextStyle(fontSize: 13),
+            validator: validator, // Use the provided validator
           ),
         ],
       ),
@@ -161,6 +166,13 @@ class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
               hintText: "e.g. B.Tech, M.Sc",
               controller: entry.degreeController,
               fieldWidth: double.infinity,
+              validator: (value) {
+                // Make degree field required
+                if (value == null || value.isEmpty) {
+                  return 'Degree is required';
+                }
+                return null;
+              },
             ),
             const SizedBox(width: 12),
             _buildLabeledInputColumn(
@@ -210,58 +222,69 @@ class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
   }
 
   void _submitEducationDetails() {
-    print('🐛 DEBUG: ===== EDUCATION DETAILS FORM SUBMISSION =====');
-    print('🐛 DEBUG: Education Entries: ${_educationEntries.length}');
+    if (_formKey.currentState!.validate()) {
+      // Validate the form
+      print('🐛 DEBUG: ===== EDUCATION DETAILS FORM SUBMISSION =====');
+      print('🐛 DEBUG: Education Entries: ${_educationEntries.length}');
 
-    try {
-      // ✅ Update provider with education details data
-      final provider = context.read<EmployeeProvider>();
-      final educationData = {
-        'education': _educationEntries
-            .map((entry) => {
-                  'degree': entry.degreeController.text,
-                  'university': entry.universityController.text,
-                  'specialization': entry.specializationController.text,
-                  'from_year': entry.fromYearController.text,
-                  'to_year': entry.toYearController.text,
-                  'percentage': entry.percentageController.text,
-                })
-            .toList(),
-      };
+      try {
+        // ✅ Update provider with education details data
+        final provider = context.read<EmployeeProvider>();
+        final educationData = {
+          'education': _educationEntries
+              .map((entry) => {
+                    'degree': entry.degreeController.text,
+                    'university': entry.universityController.text,
+                    'specialization': entry.specializationController.text,
+                    'from_year': entry.fromYearController.text,
+                    'to_year': entry.toYearController.text,
+                    'percentage': entry.percentageController.text,
+                  })
+              .toList(),
+        };
 
-      provider.updateFormData('education_details', educationData);
-      print('🐛 DEBUG: Updated provider with education details');
-      print(
-          '🐛 DEBUG: Current completion: ${provider.getCompletionPercentage().toStringAsFixed(1)}%');
-      print('🐛 DEBUG: ========================================');
+        provider.updateFormData('education_details', educationData);
+        print('🐛 DEBUG: Updated provider with education details');
+        print(
+            '🐛 DEBUG: Current completion: ${provider.getCompletionPercentage().toStringAsFixed(1)}%');
+        print('🐛 DEBUG: ========================================');
 
-      // ✅ Navigate to next screen
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 8),
-                Text('Education details saved successfully!'),
-              ],
+        // ✅ Navigate to next screen
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text('Education details saved successfully!'),
+                ],
+              ),
+              backgroundColor: AppColors.primary,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              margin: const EdgeInsets.all(16),
             ),
-            backgroundColor: AppColors.primary,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            margin: const EdgeInsets.all(16),
-          ),
-        );
-        context.goNamed('govt_bank_details');
+          );
+          context.goNamed('govt_bank_details');
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: ${e.toString()}')),
+          );
+        }
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
-        );
-      }
+    } else {
+      // If the form is not valid, show a snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill in the required fields.'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -298,107 +321,111 @@ class _EducationalDetailsSectionState extends State<EducationalDetailsSection> {
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.white),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.info_outline,
-                            color: Colors.blue.shade700, size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Fill in your educational background details below',
-                            style: TextStyle(
-                              color: Colors.blue.shade700,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Add New Education Details Button
-
-                  if (_educationEntries.isEmpty)
-                    Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+              child: Form(
+                // Wrap the content in a Form
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.white),
+                      ),
+                      child: Row(
                         children: [
-                          Icon(
-                            Icons.school_outlined,
-                            size: 64,
-                            color: Colors.grey[400],
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            "No educational details added yet",
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            "Tap the button above to add your first entry",
-                            style: TextStyle(
-                              color: Colors.grey[500],
-                              fontSize: 14,
+                          Icon(Icons.info_outline,
+                              color: Colors.blue.shade700, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Fill in your educational background details below',
+                              style: TextStyle(
+                                color: Colors.blue.shade700,
+                                fontSize: 13,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                    )
-                  else
-                    ListView.builder(
-                      physics: NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      itemCount: _educationEntries.length,
-                      itemBuilder: (context, index) {
-                        return _buildEducationEntryCard(
-                            _educationEntries[index], index);
-                      },
                     ),
+                    const SizedBox(height: 16),
 
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: _addEducationEntry,
-                        icon: const Icon(Icons.add,
-                            color: Colors.white, size: 20),
-                        label: const Text(
-                          'Add Education',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
+                    // Add New Education Details Button
+
+                    if (_educationEntries.isEmpty)
+                      Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.school_outlined,
+                              size: 64,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              "No educational details added yet",
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              "Tap the button above to add your first entry",
+                              style: TextStyle(
+                                color: Colors.grey[500],
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
                         ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 0,
-                        ),
+                      )
+                    else
+                      ListView.builder(
+                        physics: NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        itemCount: _educationEntries.length,
+                        itemBuilder: (context, index) {
+                          return _buildEducationEntryCard(
+                              _educationEntries[index], index);
+                        },
                       ),
-                    ],
-                  ),
-                ],
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _addEducationEntry,
+                          icon: const Icon(Icons.add,
+                              color: Colors.white, size: 20),
+                          label: const Text(
+                            'Add Education',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
